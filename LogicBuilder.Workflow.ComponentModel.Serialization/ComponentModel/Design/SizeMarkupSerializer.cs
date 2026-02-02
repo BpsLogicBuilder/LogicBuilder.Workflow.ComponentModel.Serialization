@@ -42,7 +42,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Design
             object size = Size.Empty;
 
             string sizeValue = value as string;
-            if (!String.IsNullOrEmpty(sizeValue))
+            if (!String.IsNullOrWhiteSpace(sizeValue))
             {
                 TypeConverter converter = TypeDescriptor.GetConverter(typeof(Size));
                 if (converter != null && converter.CanConvertFrom(typeof(string)) && !IsValidCompactAttributeFormat(sizeValue))

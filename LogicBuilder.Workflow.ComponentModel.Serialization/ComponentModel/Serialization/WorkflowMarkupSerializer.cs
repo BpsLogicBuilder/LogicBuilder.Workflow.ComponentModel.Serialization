@@ -1016,7 +1016,9 @@
             XmlReader reader = serializationManager.WorkflowMarkupStack[typeof(XmlReader)] as XmlReader;
             if (reader == null)
             {
+#if !UNITTESTS && DEBUG
                 Debug.Assert(false, "XmlReader not available.");
+#endif
                 return null;
             }
             if (IsValidCompactAttributeFormat(value))
@@ -1202,7 +1204,7 @@
             return new XmlQualifiedName(extendedProperty.Name, StandardXomlKeys.Definitions_XmlNs);
         }
 
-        #endregion
+#endregion
 
         #region Dependency Properties
         // 
@@ -2326,5 +2328,5 @@
         }
         #endregion
     }
-    #endregion
+#endregion
 }

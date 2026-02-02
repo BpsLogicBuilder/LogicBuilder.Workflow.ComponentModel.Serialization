@@ -4,6 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>LogicBuilder.Workflow</RootNamespace>
     <PackageId>LogicBuilder.Workflow.ComponentModel.Serialization</PackageId>
+		<RootNamespace>LogicBuilder.Workflow</RootNamespace>
     <Authors>BlaiseD</Authors>
     <Description>Manages serialization of rule sets for .NetStandard.</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -18,6 +19,10 @@
     <MinVerTagPrefix>v</MinVerTagPrefix>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>$(DefineConstants);UNITTESTS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

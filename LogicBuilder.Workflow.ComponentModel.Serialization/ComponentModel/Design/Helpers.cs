@@ -27,7 +27,9 @@ namespace LogicBuilder.Workflow.ComponentModel.Design
                 return XmlWriter.Create(output as TextWriter, settings);
             else
             {
+#if !UNITTESTS && DEBUG
                 Debug.Assert(false, "Invalid argument type.  'output' must either be string or TextWriter.");
+#endif
                 return null;
             }
         }

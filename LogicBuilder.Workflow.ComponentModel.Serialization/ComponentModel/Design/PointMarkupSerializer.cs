@@ -42,7 +42,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Design
             object point = Point.Empty;
 
             string pointValue = value as string;
-            if (!String.IsNullOrEmpty(pointValue))
+            if (!String.IsNullOrWhiteSpace(pointValue))
             {
                 TypeConverter converter = TypeDescriptor.GetConverter(typeof(Point));
                 if (converter != null && converter.CanConvertFrom(typeof(string)) && !IsValidCompactAttributeFormat(pointValue))

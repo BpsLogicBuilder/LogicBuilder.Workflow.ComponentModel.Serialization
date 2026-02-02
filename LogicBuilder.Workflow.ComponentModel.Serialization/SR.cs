@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Reflection;
-using System.Globalization;
-using System.Resources;
-using System.Text;
 using System.ComponentModel;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Reflection;
+using System.Resources;
 
 [AttributeUsage(AttributeTargets.All)]
 internal sealed class SRDescriptionAttribute : DescriptionAttribute
@@ -133,7 +131,9 @@ internal sealed class SR
         if (sys == null)
             return null;
         string res = sys.resources.GetString(name, culture);
+#if !UNITTESTS && DEBUG
         System.Diagnostics.Debug.Assert(res != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", new object[] { name }));
+#endif
         return res;
     }
 

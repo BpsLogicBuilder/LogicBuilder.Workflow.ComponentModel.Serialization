@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="LogicBuilder.Workflow.ComponentModel.Serialization/LogicBuilder.Workflow.ComponentModel.Serialization.csproj" />
+  <Project Path="Workflow.ComponentModel.Serialization.Tests/Workflow.ComponentModel.Serialization.Tests.csproj" Id="1b5e3f1c-42ee-4114-af6f-b3044bfba6c3" />
 </Solution>
