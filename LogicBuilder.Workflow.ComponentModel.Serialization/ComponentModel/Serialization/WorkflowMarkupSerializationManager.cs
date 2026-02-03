@@ -1,5 +1,6 @@
 ﻿namespace LogicBuilder.Workflow.ComponentModel.Serialization
 {
+    using LogicBuilder.Workflow.ComponentModel.Design;
     using System;
     using System.CodeDom;
     using System.Collections;
@@ -7,10 +8,8 @@
     using System.ComponentModel;
     using System.ComponentModel.Design;
     using System.ComponentModel.Design.Serialization;
-    using System.Diagnostics.CodeAnalysis;
     using System.Drawing;
     using System.Reflection;
-    using LogicBuilder.Workflow.ComponentModel.Design;
     using System.Xml;
 
     #region Class WorkflowMarkupSerializationManager
@@ -18,19 +17,19 @@
     {
         private Assembly localAssembly = null;
         private int writerDepth = 0;
-        private ContextStack workflowMarkupStack = new ContextStack();
+        private readonly ContextStack workflowMarkupStack = new ContextStack();
         // Stack to keep a list of objects being serialized, to avoid stack overflow
-        private Stack serializationStack = new Stack();
+        private readonly Stack serializationStack = new Stack();
         private IDesignerSerializationManager serializationManager;
-        private bool designMode = false;
+        private readonly bool designMode = false;
         internal event EventHandler<WorkflowMarkupElementEventArgs> FoundDefTag;
 
         //These are temporary variables for speedy lookup
-        private Dictionary<int, WorkflowMarkupSerializerMapping> clrNamespaceBasedMappings = new Dictionary<int, WorkflowMarkupSerializerMapping>();
-        private Dictionary<string, List<WorkflowMarkupSerializerMapping>> xmlNamespaceBasedMappings = new Dictionary<string, List<WorkflowMarkupSerializerMapping>>();
-        private Dictionary<string, List<WorkflowMarkupSerializerMapping>> prefixBasedMappings = new Dictionary<string, List<WorkflowMarkupSerializerMapping>>();
+        private readonly Dictionary<int, WorkflowMarkupSerializerMapping> clrNamespaceBasedMappings = new Dictionary<int, WorkflowMarkupSerializerMapping>();
+        private readonly Dictionary<string, List<WorkflowMarkupSerializerMapping>> xmlNamespaceBasedMappings = new Dictionary<string, List<WorkflowMarkupSerializerMapping>>();
+        private readonly Dictionary<string, List<WorkflowMarkupSerializerMapping>> prefixBasedMappings = new Dictionary<string, List<WorkflowMarkupSerializerMapping>>();
         private List<WorkflowMarkupSerializer> extendedPropertiesProviders;
-        private Dictionary<XmlQualifiedName, Type> cachedXmlQualifiedNameTypes = new Dictionary<XmlQualifiedName, Type>();
+        private readonly Dictionary<XmlQualifiedName, Type> cachedXmlQualifiedNameTypes = new Dictionary<XmlQualifiedName, Type>();
 
         public WorkflowMarkupSerializationManager(IDesignerSerializationManager manager)
         {
@@ -231,7 +230,7 @@
         }
 
 
-        [SuppressMessage("Microsoft.Globalization", "CA1307:SpecifyStringComparison", MessageId = "System.String.IndexOf(System.String)", Justification = "Not a security threat since it is called in design time scenarios")]
+        //[SuppressMessage("Microsoft.Globalization", "CA1307:SpecifyStringComparison", MessageId = "System.String.IndexOf(System.String)", Justification = "Not a security threat since it is called in design time scenarios")]
         public virtual Type GetType(string typeName)
         {
             if (typeName == null)

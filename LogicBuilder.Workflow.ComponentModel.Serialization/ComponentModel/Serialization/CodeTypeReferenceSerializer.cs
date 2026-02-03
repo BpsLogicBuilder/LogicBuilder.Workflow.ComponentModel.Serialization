@@ -28,8 +28,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
             if (value == null)
                 throw new ArgumentNullException("value");
 
-            CodeTypeReference reference = value as CodeTypeReference;
-            if (reference == null)
+            if (!(value is CodeTypeReference reference))
                 return string.Empty;
 
             // make the typename as best we can, and try to get the fully qualified name
@@ -38,7 +37,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
             Type type = serializationManager.GetType(typeName);
             if (type == null)
             {
-                // TypeProvider can't find it, see if it's a common type in mscorlib
+                // TypeProvider can't find it, see if it's a common type in System.Private.CoreLib
                 type = Type.GetType(typeName, false);
                 if (type == null)
                 {

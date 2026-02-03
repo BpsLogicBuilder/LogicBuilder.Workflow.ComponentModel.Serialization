@@ -15,10 +15,7 @@
 
         protected internal override IList GetChildren(WorkflowMarkupSerializationManager serializationManager, object obj)
         {
-            IDictionary dictionary = obj as IDictionary;
-            if (dictionary == null)
-                throw new InvalidOperationException(SR.GetString(SR.Error_DictionarySerializerNonDictionaryObject));
-
+            IDictionary dictionary = obj as IDictionary ?? throw new InvalidOperationException(SR.GetString(SR.Error_DictionarySerializerNonDictionaryObject));
             List<object> childEntries = new List<object>();
             foreach (DictionaryEntry dictionaryEntry in dictionary)
             {
@@ -48,10 +45,7 @@
             if (deserializedObject == null)
                 throw new ArgumentNullException("deserializedObject");
 
-            IDictionary dictionary = deserializedObject as IDictionary;
-            if (dictionary == null)
-                throw new InvalidOperationException(SR.GetString(SR.Error_DictionarySerializerNonDictionaryObject));
-
+            IDictionary dictionary = deserializedObject as IDictionary ?? throw new InvalidOperationException(SR.GetString(SR.Error_DictionarySerializerNonDictionaryObject));
             dictionary.Clear();
         }
 
@@ -63,10 +57,7 @@
             if (childObj == null)
                 throw new ArgumentNullException("childObj");
 
-            IDictionary dictionary = parentObj as IDictionary;
-            if (dictionary == null)
-                throw new InvalidOperationException(SR.GetString(SR.Error_DictionarySerializerNonDictionaryObject));
-
+            IDictionary dictionary = parentObj as IDictionary ?? throw new InvalidOperationException(SR.GetString(SR.Error_DictionarySerializerNonDictionaryObject));
             object key = null;
             foreach (DictionaryEntry entry in keylookupDictionary)
             {

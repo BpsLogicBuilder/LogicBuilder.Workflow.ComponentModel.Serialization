@@ -4,6 +4,7 @@
     using System.Collections;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Linq;
     using System.Reflection;
 
     #region Class CollectionMarkupSerializer
@@ -13,8 +14,6 @@
         {
             if (obj == null)
                 throw new ArgumentNullException("obj");
-
-
 
             if (!IsValidCollectionType(obj.GetType()))
                 throw new Exception(SR.GetString(SR.Error_SerializerTypeRequirement, obj.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
@@ -39,11 +38,9 @@
             if (!IsValidCollectionType(value.GetType()))
                 throw new Exception(SR.GetString(SR.Error_SerializerTypeRequirement, value.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
 
-            IEnumerable enumerable = value as IEnumerable;
-            foreach (object obj in enumerable)
-                return true;
+            IEnumerable<object> enumerable = (value as IEnumerable)?.OfType<object>();
 
-            return false;
+            return enumerable?.Any() ?? false;
         }
 
         protected internal override void ClearChildren(WorkflowMarkupSerializationManager serializationManager, object obj)
@@ -54,8 +51,7 @@
             if (!IsValidCollectionType(obj.GetType()))
                 throw new Exception(SR.GetString(SR.Error_SerializerTypeRequirement, obj.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
 
-            ICollection collection = obj as ICollection;
-            if (collection == null)
+            if (obj is ICollection) /*Updating from collection == null - appears to be a bug e.g. List of T passes IsValidCollectionType and implements System.Collections.ICollection.*/
                 obj.GetType().InvokeMember("Clear", BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance, null, obj, new object[] { }, CultureInfo.InvariantCulture);
         }
 

@@ -7,10 +7,10 @@ namespace LogicBuilder.Workflow.ComponentModel.Compiler
     [Serializable()]
     public sealed class ValidationError
     {
-        private string errorText = string.Empty;
-        private int errorNumber = 0;
+        private readonly string errorText = string.Empty;
+        private readonly int errorNumber = 0;
         private Hashtable userData = null;
-        private bool isWarning = false;
+        private readonly bool isWarning = false;
         string propertyName = null;
 
         public ValidationError(string errorText, int errorNumber)

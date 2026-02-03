@@ -5,11 +5,12 @@ using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.ComponentModel.Design.Serialization;
 using System.Diagnostics;
-using System.Text;
+using System.Diagnostics.CodeAnalysis;
 using System.Xml;
 
 namespace LogicBuilder.Workflow.ComponentModel.Serialization
 {
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
     public sealed class XmlnsDefinitionAttribute : Attribute
     {
@@ -32,16 +33,17 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
             set { this.assemblyName = value; }
         }
 
-        private string xmlNamespace;
-        private string clrNamespace;
+        private readonly string xmlNamespace;
+        private readonly string clrNamespace;
         private string assemblyName;
     }
 
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
     public sealed class XmlnsPrefixAttribute : Attribute
     {
-        private string xmlNamespace;
-        private string prefix;
+        private readonly string xmlNamespace;
+        private readonly string prefix;
 
         public XmlnsPrefixAttribute(string xmlNamespace, string prefix)
         {
@@ -58,10 +60,11 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
         }
     }
 
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Class)]
     public sealed class RuntimeNamePropertyAttribute : Attribute
     {
-        private string name = null;
+        private readonly string name = null;
         public RuntimeNamePropertyAttribute(string name)
         {
             this.name = name;
@@ -75,10 +78,11 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
         }
     }
 
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
     public sealed class ContentPropertyAttribute : Attribute
     {
-        private string name;
+        private readonly string name;
         public ContentPropertyAttribute() { }
         public ContentPropertyAttribute(string name)
         {
@@ -89,10 +93,12 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
             get { return this.name; }
         }
     }
+
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
     public sealed class ConstructorArgumentAttribute : Attribute
     {
-        private string argumentName;
+        private readonly string argumentName;
 
         public ConstructorArgumentAttribute(string argumentName)
         {
@@ -104,11 +110,13 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
         }
     }
 
+    [ExcludeFromCodeCoverage]
     public abstract class MarkupExtension
     {
         public abstract object ProvideValue(IServiceProvider provider);
     }
 
+    [ExcludeFromCodeCoverage]
     [DesignerSerializer(typeof(MarkupExtensionSerializer), typeof(WorkflowMarkupSerializer))]
     internal sealed class NullExtension : MarkupExtension
     {
@@ -119,6 +127,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
         }
     }
 
+    [ExcludeFromCodeCoverage]
     [DesignerSerializer(typeof(TypeExtensionSerializer), typeof(WorkflowMarkupSerializer))]
     internal sealed class TypeExtension : MarkupExtension
     {
@@ -146,19 +155,15 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
             if (this.typeName == null)
                 throw new InvalidOperationException("typename");
 
-            WorkflowMarkupSerializationManager manager = provider as WorkflowMarkupSerializationManager;
-            if (manager == null)
-                throw new ArgumentNullException("provider");
-
-            XmlReader reader = manager.WorkflowMarkupStack[typeof(XmlReader)] as XmlReader;
-            if (reader == null)
+            WorkflowMarkupSerializationManager manager = provider as WorkflowMarkupSerializationManager ?? throw new ArgumentNullException("provider");
+            if (!(manager.WorkflowMarkupStack[typeof(XmlReader)] is XmlReader reader))
             {
                 Debug.Assert(false);
                 return this.typeName;
             }
 
             string typename = this.typeName.Trim();
-            string prefix = String.Empty;
+            string prefix;
             int typeIndex = typename.IndexOf(':');
             if (typeIndex >= 0)
             {
@@ -212,10 +217,11 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
         }
     }
 
+    [ExcludeFromCodeCoverage]
     [ContentProperty("Items")]
     internal sealed class ArrayExtension : MarkupExtension
     {
-        private ArrayList arrayElementList = new ArrayList();
+        private readonly ArrayList arrayElementList = new ArrayList();
         private Type arrayType;
 
         public ArrayExtension()
@@ -268,7 +274,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
             if (this.arrayType == null)
                 throw new InvalidOperationException("ArrayType needs to be set.");
 
-            object retArray = null;
+            object retArray;
             try
             {
                 retArray = arrayElementList.ToArray(this.arrayType);

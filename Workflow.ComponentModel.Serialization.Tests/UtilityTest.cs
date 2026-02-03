@@ -11,7 +11,7 @@ namespace LogicBuilder.Workflow.Tests
         {
             // Arrange
             string guidString = "12345678-1234-1234-1234-123456789abc";
-            Guid expected = new Guid(guidString);
+            Guid expected = new(guidString);
 
             // Act
             Guid result = Utility.CreateGuid(guidString);
@@ -25,7 +25,7 @@ namespace LogicBuilder.Workflow.Tests
         {
             // Arrange
             string guidString = "12345678123412341234123456789abc";
-            Guid expected = new Guid(guidString);
+            Guid expected = new(guidString);
 
             // Act
             Guid result = Utility.CreateGuid(guidString);
@@ -39,7 +39,7 @@ namespace LogicBuilder.Workflow.Tests
         {
             // Arrange
             string guidString = "{12345678-1234-1234-1234-123456789abc}";
-            Guid expected = new Guid(guidString);
+            Guid expected = new(guidString);
 
             // Act
             Guid result = Utility.CreateGuid(guidString);
@@ -53,7 +53,7 @@ namespace LogicBuilder.Workflow.Tests
         {
             // Arrange
             string guidString = "(12345678-1234-1234-1234-123456789abc)";
-            Guid expected = new Guid(guidString);
+            Guid expected = new(guidString);
 
             // Act
             Guid result = Utility.CreateGuid(guidString);
@@ -66,7 +66,7 @@ namespace LogicBuilder.Workflow.Tests
         public void CreateGuid_ThrowsArgumentNullException_WhenGuidStringIsNull()
         {
             // Arrange
-            string guidString = null;
+            string guidString = null!;
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => Utility.CreateGuid(guidString));
@@ -111,7 +111,7 @@ namespace LogicBuilder.Workflow.Tests
         {
             // Arrange
             string guidString = "12345678-1234-1234-1234-123456789abc";
-            Guid expected = new Guid(guidString);
+            Guid expected = new(guidString);
 
             // Act
             bool success = Utility.TryCreateGuid(guidString, out Guid result);
@@ -126,7 +126,7 @@ namespace LogicBuilder.Workflow.Tests
         {
             // Arrange
             string guidString = "12345678123412341234123456789abc";
-            Guid expected = new Guid(guidString);
+            Guid expected = new(guidString);
 
             // Act
             bool success = Utility.TryCreateGuid(guidString, out Guid result);
@@ -141,7 +141,7 @@ namespace LogicBuilder.Workflow.Tests
         {
             // Arrange
             string guidString = "{12345678-1234-1234-1234-123456789abc}";
-            Guid expected = new Guid(guidString);
+            Guid expected = new(guidString);
 
             // Act
             bool success = Utility.TryCreateGuid(guidString, out Guid result);
@@ -156,7 +156,7 @@ namespace LogicBuilder.Workflow.Tests
         {
             // Arrange
             string guidString = "(12345678-1234-1234-1234-123456789abc)";
-            Guid expected = new Guid(guidString);
+            Guid expected = new(guidString);
 
             // Act
             bool success = Utility.TryCreateGuid(guidString, out Guid result);
@@ -170,7 +170,7 @@ namespace LogicBuilder.Workflow.Tests
         public void TryCreateGuid_ReturnsFalseAndEmptyGuid_WhenGuidStringIsNull()
         {
             // Arrange
-            string guidString = null;
+            string guidString = null!;
 
             // Act
             bool success = Utility.TryCreateGuid(guidString, out Guid result);
@@ -241,7 +241,7 @@ namespace LogicBuilder.Workflow.Tests
         {
             // Arrange
             string guidString = "12345678-1234-1234-1234-123456789ABC";
-            Guid expected = new Guid(guidString);
+            Guid expected = new(guidString);
 
             // Act
             bool success = Utility.TryCreateGuid(guidString, out Guid result);
@@ -256,7 +256,7 @@ namespace LogicBuilder.Workflow.Tests
         {
             // Arrange
             string guidString = "12345678-1234-1234-1234-123456789AbC";
-            Guid expected = new Guid(guidString);
+            Guid expected = new(guidString);
 
             // Act
             bool success = Utility.TryCreateGuid(guidString, out Guid result);

@@ -12,8 +12,11 @@
  * The two files must be kept in sync.  Any change made here must also
  * be made to WF\Activities\Common\ErrorNumbers.cs
 *********************************************************************/
+using System.Diagnostics.CodeAnalysis;
+
 namespace LogicBuilder.Workflow.ComponentModel
 {
+    [ExcludeFromCodeCoverage]
     internal static class ErrorNumbers
     {
         // Errors in ComponentModel.dll and Activities.dll.

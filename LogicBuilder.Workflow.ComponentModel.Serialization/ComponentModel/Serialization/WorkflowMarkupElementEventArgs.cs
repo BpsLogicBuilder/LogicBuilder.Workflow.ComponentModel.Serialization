@@ -8,7 +8,7 @@
     #region WorkflowMarkupElementEventArgs
     internal sealed class WorkflowMarkupElementEventArgs : EventArgs
     {
-        private XmlReader reader = null;
+        private readonly XmlReader reader = null;
 
         internal WorkflowMarkupElementEventArgs(XmlReader reader)
         {

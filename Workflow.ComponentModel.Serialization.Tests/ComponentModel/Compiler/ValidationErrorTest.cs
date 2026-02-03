@@ -67,7 +67,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void Constructor_WithNullErrorText_CreatesValidationError()
         {
             // Arrange
-            string errorText = null;
+            string? errorText = null;
             int errorNumber = 100;
 
             // Act
@@ -99,7 +99,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
             // Arrange
             string errorText = "Test error";
             int errorNumber = 100;
-            string propertyName = null;
+            string? propertyName = null;
 
             // Act
             var error = new ValidationError(errorText, errorNumber, false, propertyName);
@@ -212,10 +212,11 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void PropertyName_CanBeSetToNull()
         {
             // Arrange
-            var error = new ValidationError("Error", 100, false, "InitialProperty");
-
-            // Act
-            error.PropertyName = null;
+            var error = new ValidationError("Error", 100, false, "InitialProperty")
+            {
+                // Act
+                PropertyName = null
+            };
 
             // Assert
             Assert.Null(error.PropertyName);
@@ -416,7 +417,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void GetNotSetValidationError_WithNullPropertyName_CreatesValidationError()
         {
             // Arrange
-            string propertyName = null;
+            string? propertyName = null;
 
             // Act
             ValidationError error = ValidationError.GetNotSetValidationError(propertyName);
@@ -570,18 +571,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         #endregion
 
         #region Serialization Tests
-
-        [Fact]
-        public void ValidationError_IsSerializable()
-        {
-            // Arrange
-            var error = new ValidationError("Test error", 100, false, "TestProperty");
-            error.UserData["key1"] = "value1";
-
-            // Act & Assert
-            var type = typeof(ValidationError);
-            Assert.True(type.IsSerializable);
-        }
 
         [Fact]
         public void ValidationError_HasSerializableAttribute()

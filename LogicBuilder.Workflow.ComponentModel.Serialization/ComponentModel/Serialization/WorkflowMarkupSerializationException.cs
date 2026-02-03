@@ -7,8 +7,8 @@
     [Serializable()]
     public class WorkflowMarkupSerializationException : Exception
     {
-        private int lineNumber = -1;
-        private int columnNumber = -1;
+        private readonly int lineNumber = -1;
+        private readonly int columnNumber = -1;
 
         public WorkflowMarkupSerializationException(string message, int lineNumber, int columnNumber)
             : base(message)

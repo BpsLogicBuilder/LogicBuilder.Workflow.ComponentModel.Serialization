@@ -24,9 +24,11 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void Constructor_WithValidationErrorCollection_CopiesItems()
         {
             // Arrange
-            var sourceCollection = new ValidationErrorCollection();
-            sourceCollection.Add(new ValidationError("Error 1", 100));
-            sourceCollection.Add(new ValidationError("Error 2", 101));
+            var sourceCollection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100),
+                new ValidationError("Error 2", 101)
+            };
 
             // Act
             var collection = new ValidationErrorCollection(sourceCollection);
@@ -56,9 +58,9 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
             // Arrange
             var errors = new List<ValidationError>
             {
-                new ValidationError("Error 1", 100),
-                new ValidationError("Error 2", 101),
-                new ValidationError("Error 3", 102)
+                new("Error 1", 100),
+                new("Error 2", 101),
+                new("Error 3", 102)
             };
 
             // Act
@@ -76,7 +78,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         {
             // Act & Assert
             var exception = Assert.Throws<ArgumentNullException>(() => 
-                new ValidationErrorCollection((IEnumerable<ValidationError>)null));
+                new ValidationErrorCollection((IEnumerable<ValidationError>)null!));
             Assert.Equal("value", exception.ParamName);
         }
 
@@ -91,9 +93,9 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
             var collection = new ValidationErrorCollection();
             var errors = new List<ValidationError>
             {
-                new ValidationError("Error 1", 100),
-                new ValidationError("Error 2", 101),
-                new ValidationError("Error 3", 102)
+                new("Error 1", 100),
+                new("Error 2", 101),
+                new("Error 3", 102)
             };
 
             // Act
@@ -136,12 +138,14 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void AddRange_ToExistingCollection_AppendsItems()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Existing Error", 99));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Existing Error", 99)
+            };
             var errors = new List<ValidationError>
             {
-                new ValidationError("New Error 1", 100),
-                new ValidationError("New Error 2", 101)
+                new("New Error 1", 100),
+                new("New Error 2", 101)
             };
 
             // Act
@@ -172,9 +176,11 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void HasErrors_WithOnlyWarnings_ReturnsFalse()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Warning 1", 100, true));
-            collection.Add(new ValidationError("Warning 2", 101, true));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Warning 1", 100, true),
+                new ValidationError("Warning 2", 101, true)
+            };
 
             // Act & Assert
             Assert.False(collection.HasErrors);
@@ -184,9 +190,11 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void HasErrors_WithOnlyErrors_ReturnsTrue()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Error 1", 100, false));
-            collection.Add(new ValidationError("Error 2", 101, false));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100, false),
+                new ValidationError("Error 2", 101, false)
+            };
 
             // Act & Assert
             Assert.True(collection.HasErrors);
@@ -196,10 +204,12 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void HasErrors_WithMixedErrorsAndWarnings_ReturnsTrue()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Warning 1", 100, true));
-            collection.Add(new ValidationError("Error 1", 101, false));
-            collection.Add(new ValidationError("Warning 2", 102, true));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Warning 1", 100, true),
+                new ValidationError("Error 1", 101, false),
+                new ValidationError("Warning 2", 102, true)
+            };
 
             // Act & Assert
             Assert.True(collection.HasErrors);
@@ -209,8 +219,10 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void HasErrors_WithSingleError_ReturnsTrue()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Error 1", 100));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100)
+            };
 
             // Act & Assert
             Assert.True(collection.HasErrors);
@@ -234,9 +246,11 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void HasWarnings_WithOnlyErrors_ReturnsFalse()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Error 1", 100, false));
-            collection.Add(new ValidationError("Error 2", 101, false));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100, false),
+                new ValidationError("Error 2", 101, false)
+            };
 
             // Act & Assert
             Assert.False(collection.HasWarnings);
@@ -246,9 +260,11 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void HasWarnings_WithOnlyWarnings_ReturnsTrue()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Warning 1", 100, true));
-            collection.Add(new ValidationError("Warning 2", 101, true));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Warning 1", 100, true),
+                new ValidationError("Warning 2", 101, true)
+            };
 
             // Act & Assert
             Assert.True(collection.HasWarnings);
@@ -258,10 +274,12 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void HasWarnings_WithMixedErrorsAndWarnings_ReturnsTrue()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Error 1", 100, false));
-            collection.Add(new ValidationError("Warning 1", 101, true));
-            collection.Add(new ValidationError("Error 2", 102, false));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100, false),
+                new ValidationError("Warning 1", 101, true),
+                new ValidationError("Error 2", 102, false)
+            };
 
             // Act & Assert
             Assert.True(collection.HasWarnings);
@@ -271,8 +289,10 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void HasWarnings_WithSingleWarning_ReturnsTrue()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Warning 1", 100, true));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Warning 1", 100, true)
+            };
 
             // Act & Assert
             Assert.True(collection.HasWarnings);
@@ -300,10 +320,12 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void ToArray_WithItems_ReturnsArrayWithAllItems()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Error 1", 100));
-            collection.Add(new ValidationError("Error 2", 101));
-            collection.Add(new ValidationError("Error 3", 102));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100),
+                new ValidationError("Error 2", 101),
+                new ValidationError("Error 3", 102)
+            };
 
             // Act
             var array = collection.ToArray();
@@ -319,8 +341,10 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void ToArray_ReturnsIndependentArray()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Error 1", 100));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100)
+            };
 
             // Act
             var array = collection.ToArray();
@@ -339,9 +363,11 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void Insert_WithValidItem_InsertsItem()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Error 1", 100));
-            collection.Add(new ValidationError("Error 3", 102));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100),
+                new ValidationError("Error 3", 102)
+            };
 
             // Act
             collection.Insert(1, new ValidationError("Error 2", 101));
@@ -357,8 +383,10 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void Insert_WithNullItem_ThrowsArgumentNullException()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Error 1", 100));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100)
+            };
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentNullException>(() => 
@@ -382,9 +410,11 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void Indexer_Set_WithValidItem_ReplacesItem()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Error 1", 100));
-            collection.Add(new ValidationError("Error 2", 101));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100),
+                new ValidationError("Error 2", 101)
+            };
 
             // Act
             collection[1] = new ValidationError("Replaced Error", 201);
@@ -399,8 +429,10 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void Indexer_Set_WithNullItem_ThrowsArgumentNullException()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Error 1", 100));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100)
+            };
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentNullException>(() => 
@@ -435,10 +467,12 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void Clear_WithItems_RemovesAllItems()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Error 1", 100));
-            collection.Add(new ValidationError("Error 2", 101));
-            collection.Add(new ValidationError("Error 3", 102));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100),
+                new ValidationError("Error 2", 101),
+                new ValidationError("Error 3", 102)
+            };
 
             // Act
             collection.Clear();
@@ -465,8 +499,10 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void Contains_WithNonExistingItem_ReturnsFalse()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Error 1", 100));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100)
+            };
             var differentError = new ValidationError("Error 2", 101);
 
             // Act & Assert
@@ -477,10 +513,12 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         public void Enumeration_WithMultipleItems_EnumeratesAllItems()
         {
             // Arrange
-            var collection = new ValidationErrorCollection();
-            collection.Add(new ValidationError("Error 1", 100));
-            collection.Add(new ValidationError("Error 2", 101));
-            collection.Add(new ValidationError("Error 3", 102));
+            var collection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100),
+                new ValidationError("Error 2", 101),
+                new ValidationError("Error 3", 102)
+            };
 
             // Act
             var enumerated = collection.ToList();
@@ -525,9 +563,11 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         {
             // Arrange
             var collection = new ValidationErrorCollection();
-            var sourceCollection = new ValidationErrorCollection();
-            sourceCollection.Add(new ValidationError("Error 1", 100));
-            sourceCollection.Add(new ValidationError("Error 2", 101));
+            var sourceCollection = new ValidationErrorCollection
+            {
+                new ValidationError("Error 1", 100),
+                new ValidationError("Error 2", 101)
+            };
 
             // Act
             collection.AddRange(sourceCollection);

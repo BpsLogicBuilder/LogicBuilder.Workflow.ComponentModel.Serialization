@@ -49,65 +49,59 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Design
         public void CreateXmlWriter_WithTextWriter_CreatesXmlWriter()
         {
             // Arrange
-            using (StringWriter stringWriter = new StringWriter())
-            {
-                // Act
-                XmlWriter writer = Helpers.CreateXmlWriter(stringWriter);
+            using StringWriter stringWriter = new();
+            // Act
+            XmlWriter writer = Helpers.CreateXmlWriter(stringWriter);
 
-                // Assert
-                Assert.NotNull(writer);
+            // Assert
+            Assert.NotNull(writer);
 
-                // Write some content to verify it works
-                writer.WriteStartElement("root");
-                writer.WriteElementString("test", "value");
-                writer.WriteEndElement();
-                writer.Flush();
+            // Write some content to verify it works
+            writer.WriteStartElement("root");
+            writer.WriteElementString("test", "value");
+            writer.WriteEndElement();
+            writer.Flush();
 
-                // Verify content
-                string result = stringWriter.ToString();
-                Assert.Contains("<root>", result);
-                Assert.Contains("<test>value</test>", result);
-            }
+            // Verify content
+            string result = stringWriter.ToString();
+            Assert.Contains("<root>", result);
+            Assert.Contains("<test>value</test>", result);
         }
 
         [Fact]
         public void CreateXmlWriter_SettingsApplied_IndentsContent()
         {
             // Arrange
-            using (StringWriter stringWriter = new StringWriter())
-            {
-                // Act
-                XmlWriter writer = Helpers.CreateXmlWriter(stringWriter);
-                writer.WriteStartElement("root");
-                writer.WriteStartElement("child");
-                writer.WriteEndElement();
-                writer.WriteEndElement();
-                writer.Flush();
+            using StringWriter stringWriter = new();
+            // Act
+            XmlWriter writer = Helpers.CreateXmlWriter(stringWriter);
+            writer.WriteStartElement("root");
+            writer.WriteStartElement("child");
+            writer.WriteEndElement();
+            writer.WriteEndElement();
+            writer.Flush();
 
-                // Assert
-                string result = stringWriter.ToString();
-                // Should contain indentation (tabs)
-                Assert.Contains("\t", result);
-            }
+            // Assert
+            string result = stringWriter.ToString();
+            // Should contain indentation (tabs)
+            Assert.Contains("\t", result);
         }
 
         [Fact]
         public void CreateXmlWriter_SettingsApplied_OmitsXmlDeclaration()
         {
             // Arrange
-            using (StringWriter stringWriter = new StringWriter())
-            {
-                // Act
-                XmlWriter writer = Helpers.CreateXmlWriter(stringWriter);
-                writer.WriteStartElement("root");
-                writer.WriteEndElement();
-                writer.Flush();
+            using StringWriter stringWriter = new();
+            // Act
+            XmlWriter writer = Helpers.CreateXmlWriter(stringWriter);
+            writer.WriteStartElement("root");
+            writer.WriteEndElement();
+            writer.Flush();
 
-                // Assert
-                string result = stringWriter.ToString();
-                // Should not contain XML declaration
-                Assert.DoesNotContain("<?xml", result);
-            }
+            // Assert
+            string result = stringWriter.ToString();
+            // Should not contain XML declaration
+            Assert.DoesNotContain("<?xml", result);
         }
 
         [Fact]
@@ -127,7 +121,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Design
         public void CreateXmlWriter_WithNull_ReturnsNull()
         {
             // Arrange
-            object nullOutput = null;
+            object? nullOutput = null;
 
             // Act
             XmlWriter writer = Helpers.CreateXmlWriter(nullOutput);
@@ -232,24 +226,24 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Design
 
         private class TestClassWithoutAttributes
         {
-            public string NormalProperty { get; set; }
+            public string NormalProperty { get; set; } = string.Empty;
         }
 
         private class TestClassWithAttributes
         {
             [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
-            public string VisibleProperty { get; set; }
+            public string VisibleProperty { get; set; } = string.Empty;
 
             [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-            public string HiddenProperty { get; set; }
+            public string HiddenProperty { get; set; } = string.Empty;
 
             [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
-            public string ContentProperty { get; set; }
+            public string ContentProperty { get; set; } = string.Empty;
 
             [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-            public string HiddenField;
+            public string HiddenField = string.Empty;
 
-            public void NormalMethod() { }
+            public static void NormalMethod() { }
         }
 
         #endregion

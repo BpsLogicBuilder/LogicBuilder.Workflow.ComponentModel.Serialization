@@ -103,7 +103,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel
         public void ConvertTo_SkipsNullHandles()
         {
             // Arrange
-            var handles = new List<string> { "handle1", null, "handle2" };
+            var handles = new List<string> { "handle1", null!, "handle2" };
 
             // Act
             object result = _converter.ConvertTo(null, CultureInfo.InvariantCulture, handles, typeof(string));
@@ -333,7 +333,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel
         public void Stringify_SkipsNullHandles()
         {
             // Arrange
-            var handles = new List<string> { "handle1", null, "handle2", null };
+            var handles = new List<string> { "handle1", null!, "handle2", null! };
 
             // Act
             string result = SynchronizationHandlesTypeConverter.Stringify(handles);
@@ -346,7 +346,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel
         public void Stringify_HandlesOnlyNullHandles()
         {
             // Arrange
-            var handles = new List<string> { null, null };
+            var handles = new List<string> { null!, null! };
 
             // Act
             string result = SynchronizationHandlesTypeConverter.Stringify(handles);
@@ -513,7 +513,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel
             var result = _converter.ConvertFrom(null, CultureInfo.InvariantCulture, stringified) as ICollection<string>;
 
             // Assert
-            Assert.Equal(originalHandles.Count, result.Count);
+            Assert.Equal(originalHandles.Count, result!.Count);
             foreach (var handle in originalHandles)
             {
                 Assert.Contains(handle, result);

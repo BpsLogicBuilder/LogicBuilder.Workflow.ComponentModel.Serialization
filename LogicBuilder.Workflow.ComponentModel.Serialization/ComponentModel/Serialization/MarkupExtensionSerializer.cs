@@ -31,16 +31,12 @@
         {
             if (serializationManager == null)
                 throw new ArgumentNullException("serializationManager");
-            XmlWriter writer = serializationManager.WorkflowMarkupStack[typeof(XmlWriter)] as XmlWriter;
-            if (writer == null)
-                throw new ArgumentNullException("writer");
+            XmlWriter writer = serializationManager.WorkflowMarkupStack[typeof(XmlWriter)] as XmlWriter ?? throw new ArgumentNullException("writer");
             if (value == null)
                 throw new ArgumentNullException("value");
 
             writer.WriteString(MarkupExtensionSerializer.CompactFormatStart);
-
-            string prefix = String.Empty;
-            XmlQualifiedName qualifiedName = serializationManager.GetXmlQualifiedName(value.GetType(), out prefix);
+            XmlQualifiedName qualifiedName = serializationManager.GetXmlQualifiedName(value.GetType(), out _);
             writer.WriteQualifiedName(qualifiedName.Name, qualifiedName.Namespace);
 
             int index = 0;
@@ -76,8 +72,7 @@
                                 Type argType = argValue as Type;
                                 if (argType.Assembly != null)
                                 {
-                                    string typePrefix = String.Empty;
-                                    XmlQualifiedName typeQualifiedName = serializationManager.GetXmlQualifiedName(argType, out typePrefix);
+                                    XmlQualifiedName typeQualifiedName = serializationManager.GetXmlQualifiedName(argType, out _);
                                     writer.WriteQualifiedName(XmlConvert.EncodeName(typeQualifiedName.Name), typeQualifiedName.Namespace);
                                 }
                                 else
@@ -103,8 +98,7 @@
             {
                 if (Helpers.GetSerializationVisibility(serializableProperty) != DesignerSerializationVisibility.Hidden && serializableProperty.CanRead && serializableProperty.GetValue(value, null) != null)
                 {
-                    WorkflowMarkupSerializer propSerializer = serializationManager.GetSerializer(serializableProperty.PropertyType, typeof(WorkflowMarkupSerializer)) as WorkflowMarkupSerializer;
-                    if (propSerializer == null)
+                    if (!(serializationManager.GetSerializer(serializableProperty.PropertyType, typeof(WorkflowMarkupSerializer)) is WorkflowMarkupSerializer propSerializer))
                     {
                         serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNotAvailable, serializableProperty.PropertyType.FullName)));
                         continue;
@@ -171,11 +165,9 @@
 
         protected virtual InstanceDescriptor GetInstanceDescriptor(WorkflowMarkupSerializationManager serializationManager, object value)
         {
-            MarkupExtension markupExtension = value as MarkupExtension;
-            if (markupExtension == null)
-                throw new ArgumentException(SR.GetString(SR.Error_UnexpectedArgumentType, typeof(MarkupExtension).FullName), "value");
-            return new InstanceDescriptor(markupExtension.GetType().GetConstructor(new Type[0]), null);
-
+            return !(value is MarkupExtension markupExtension)
+                ? throw new ArgumentException(SR.GetString(SR.Error_UnexpectedArgumentType, typeof(MarkupExtension).FullName), "value")
+                : new InstanceDescriptor(markupExtension.GetType().GetConstructor(new Type[0]), null);
         }
 
         // more escaped characters can be consider here, hence a seperate fn instead of string.Replace

@@ -36,7 +36,7 @@ namespace LogicBuilder.Workflow.Tests
             // Arrange
             // Assuming there's a resource with format placeholders
             string key = "Activity";
-            object[] args = new object[] { "test" };
+            object[] args = ["test"];
 
             // Act
             string result = SR.GetString(key, args);
@@ -51,7 +51,7 @@ namespace LogicBuilder.Workflow.Tests
         {
             // Arrange
             string key = "Activity";
-            object[] args = new object[] { "test" };
+            object[] args = ["test"];
 
             // Act
             string result = SR.GetString(CultureInfo.InvariantCulture, key, args);
@@ -66,7 +66,7 @@ namespace LogicBuilder.Workflow.Tests
         {
             // Arrange
             string key = "Activity";
-            object[] args = new object[] { };
+            object[] args = [];
 
             // Act
             string result = SR.GetString(key, args);
@@ -190,7 +190,7 @@ namespace LogicBuilder.Workflow.Tests
             var propertyInfo = typeof(TestClassWithAttributes).GetProperty("TestProperty");
 
             // Act
-            var attribute = propertyInfo.GetCustomAttribute<SRDescriptionAttribute>();
+            var attribute = propertyInfo?.GetCustomAttribute<SRDescriptionAttribute>();
 
             // Assert
             Assert.NotNull(attribute);
@@ -253,7 +253,7 @@ namespace LogicBuilder.Workflow.Tests
             var propertyInfo = typeof(TestClassWithAttributes).GetProperty("TestPropertyWithCategory");
 
             // Act
-            var attribute = propertyInfo.GetCustomAttribute<SRCategoryAttribute>();
+            var attribute = propertyInfo?.GetCustomAttribute<SRCategoryAttribute>();
 
             // Assert
             Assert.NotNull(attribute);
@@ -305,7 +305,7 @@ namespace LogicBuilder.Workflow.Tests
             var propertyInfo = typeof(TestClassWithAttributes).GetProperty("TestPropertyWithDisplayName");
 
             // Act
-            var attribute = propertyInfo.GetCustomAttribute<SRDisplayNameAttribute>();
+            var attribute = propertyInfo?.GetCustomAttribute<SRDisplayNameAttribute>();
 
             // Assert
             Assert.NotNull(attribute);
@@ -387,9 +387,9 @@ namespace LogicBuilder.Workflow.Tests
             var propertyInfo = typeof(TestClassWithAttributes).GetProperty("FullyDecoratedProperty");
 
             // Act
-            var descriptionAttr = propertyInfo.GetCustomAttribute<SRDescriptionAttribute>();
-            var categoryAttr = propertyInfo.GetCustomAttribute<SRCategoryAttribute>();
-            var displayNameAttr = propertyInfo.GetCustomAttribute<SRDisplayNameAttribute>();
+            var descriptionAttr = propertyInfo?.GetCustomAttribute<SRDescriptionAttribute>();
+            var categoryAttr = propertyInfo?.GetCustomAttribute<SRCategoryAttribute>();
+            var displayNameAttr = propertyInfo?.GetCustomAttribute<SRDisplayNameAttribute>();
 
             // Assert
             Assert.NotNull(descriptionAttr);
@@ -401,12 +401,12 @@ namespace LogicBuilder.Workflow.Tests
         public void SR_GetString_WithMultipleArgs_FormatsCorrectly()
         {
             // Arrange
-            string template = "Value1: {0}, Value2: {1}";
+            //string template = "Value1: {0}, Value2: {1}";
             // Note: This assumes there's a resource that contains format placeholders
             // For this test, we'll just verify the method handles multiple arguments
 
             // Act
-            string result = SR.GetString("Activity", "arg1", "arg2");
+            string result = SR.GetString("Error_SerializerCreateInstanceFailed", "arg1", "arg2");
 
             // Assert
             Assert.NotNull(result);
@@ -443,18 +443,18 @@ namespace LogicBuilder.Workflow.Tests
         private class TestClassWithAttributes
         {
             [SRDescription("Activity")]
-            public string TestProperty { get; set; }
+            public string TestProperty { get; set; } = string.Empty;
 
             [SRCategory("Activity")]
-            public string TestPropertyWithCategory { get; set; }
+            public string TestPropertyWithCategory { get; set; } = string.Empty;
 
             [SRDisplayName("Activity")]
-            public string TestPropertyWithDisplayName { get; set; }
+            public string TestPropertyWithDisplayName { get; set; } = string.Empty;
 
             [SRDescription("Activity")]
             [SRCategory("Handlers")]
             [SRDisplayName("Conditions")]
-            public string FullyDecoratedProperty { get; set; }
+            public string FullyDecoratedProperty { get; set; } = string.Empty;
         }
 
         #endregion

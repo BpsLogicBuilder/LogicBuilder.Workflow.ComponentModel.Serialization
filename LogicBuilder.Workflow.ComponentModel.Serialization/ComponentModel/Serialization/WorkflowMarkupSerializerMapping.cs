@@ -4,6 +4,7 @@
     using System.Collections;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Linq;
     using System.Reflection;
     using System.Xml;
 
@@ -18,11 +19,11 @@
         private static readonly WorkflowMarkupSerializerMapping Serialization;
         private static readonly WorkflowMarkupSerializerMapping Rules;
 
-        private string xmlns = String.Empty;
-        private string clrns = String.Empty;
-        private string targetAssemblyName = String.Empty;
-        private string prefix = String.Empty;
-        private string unifiedAssemblyName = String.Empty;
+        private readonly string xmlns = String.Empty;
+        private readonly string clrns = String.Empty;
+        private readonly string targetAssemblyName = String.Empty;
+        private readonly string prefix = String.Empty;
+        private readonly string unifiedAssemblyName = String.Empty;
 
         static WorkflowMarkupSerializerMapping()
         {
@@ -62,8 +63,7 @@
 
         public override bool Equals(object value)
         {
-            WorkflowMarkupSerializerMapping mapping = value as WorkflowMarkupSerializerMapping;
-            if (mapping == null)
+            if (!(value is WorkflowMarkupSerializerMapping mapping))
             {
                 return false;
             }
@@ -205,7 +205,7 @@
                         object[] xmlnsDefinitions = assembly.GetCustomAttributes(typeof(XmlnsDefinitionAttribute), true);
                         if (xmlnsDefinitions != null)
                         {
-                            foreach (XmlnsDefinitionAttribute xmlnsDefinition in xmlnsDefinitions)
+                            foreach (XmlnsDefinitionAttribute xmlnsDefinition in xmlnsDefinitions.OfType<XmlnsDefinitionAttribute>())
                             {
                                 string assemblyName = String.Empty;
                                 if (serializationManager.LocalAssembly != assembly)
@@ -234,10 +234,10 @@
 
             string clrNamespace = type.Namespace ?? String.Empty;
             string xmlNamespace = String.Empty;
-            string assemblyName = String.Empty;
+            string assemblyName;
             string prefix = String.Empty;
 
-            assemblyName = GetAssemblyName(type, manager);
+            assemblyName = GetAssemblyName(type);
 
             if (type.Assembly.FullName.Equals(AssemblyRef.ActivitiesAssemblyRef, StringComparison.Ordinal))
             {
@@ -259,7 +259,7 @@
             {
                 //First lookup the type's assembly for XmlNsDefinitionAttribute
                 object[] xmlnsDefinitions = type.Assembly.GetCustomAttributes(typeof(XmlnsDefinitionAttribute), true);
-                foreach (XmlnsDefinitionAttribute xmlnsDefinition in xmlnsDefinitions)
+                foreach (XmlnsDefinitionAttribute xmlnsDefinition in xmlnsDefinitions.OfType<XmlnsDefinitionAttribute>())
                 {
                     xmlNamespace = xmlnsDefinition.XmlNamespace;
                     assemblyName = xmlnsDefinition.AssemblyName;
@@ -267,7 +267,7 @@
                     if (type.Assembly == manager.LocalAssembly)
                         assemblyName = String.Empty;
                     else if (String.IsNullOrEmpty(assemblyName))
-                        assemblyName = GetAssemblyName(type, manager);
+                        assemblyName = GetAssemblyName(type);
 
                     if (String.IsNullOrEmpty(xmlNamespace))
                         xmlNamespace = GetFormatedXmlNamespace(clrNamespace, assemblyName);
@@ -286,7 +286,7 @@
                 if (type.Assembly == manager.LocalAssembly)
                     assemblyName = String.Empty;
                 else if (String.IsNullOrEmpty(assemblyName))
-                    assemblyName = GetAssemblyName(type, manager);
+                    assemblyName = GetAssemblyName(type);
 
                 xmlNamespace = GetFormatedXmlNamespace(clrNamespace, assemblyName);
 
@@ -297,7 +297,7 @@
             }
         }
 
-        private static string GetAssemblyName(Type type, WorkflowMarkupSerializationManager manager)
+        private static string GetAssemblyName(Type type)
         {
             //
             // Handle DesignTimeType
@@ -328,7 +328,7 @@
             object[] xmlnsPrefixes = assembly.GetCustomAttributes(typeof(XmlnsPrefixAttribute), true);
             if (xmlnsPrefixes != null)
             {
-                foreach (XmlnsPrefixAttribute xmlnsPrefix in xmlnsPrefixes)
+                foreach (XmlnsPrefixAttribute xmlnsPrefix in xmlnsPrefixes.OfType<XmlnsPrefixAttribute>())
                 {
                     if (xmlnsPrefix.XmlNamespace.Equals(xmlNamespace, StringComparison.Ordinal))
                     {
