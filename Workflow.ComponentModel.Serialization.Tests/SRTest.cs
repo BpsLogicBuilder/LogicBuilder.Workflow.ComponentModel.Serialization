@@ -204,7 +204,7 @@ namespace LogicBuilder.Workflow.Tests
             // We'll test that the constructor doesn't throw
             
             // Act
-            Exception exception = Record.Exception(() => 
+            Exception? exception = Record.Exception(() => 
                 new SRDescriptionAttribute("Activity", "LogicBuilder.Workflow.Resources"));
 
             // Assert - constructor should handle gracefully even if resource set doesn't exist
@@ -315,7 +315,7 @@ namespace LogicBuilder.Workflow.Tests
         public void SRDisplayNameAttribute_WithResourceSet_SetsDisplayNameValue()
         {
             // Act
-            Exception exception = Record.Exception(() => 
+            Exception? exception = Record.Exception(() => 
                 new SRDisplayNameAttribute("Activity", "LogicBuilder.Workflow.Resources"));
 
             // Assert
@@ -428,11 +428,11 @@ namespace LogicBuilder.Workflow.Tests
                     {
                         _ = SR.GetString("Activity");
                     }
-                });
+                }, TestContext.Current.CancellationToken);
             }
 
             // Assert
-            var exception = Record.Exception(() => System.Threading.Tasks.Task.WaitAll(tasks));
+            Exception? exception = Record.Exception(() => System.Threading.Tasks.Task.WaitAll(tasks, TestContext.Current.CancellationToken));
             Assert.Null(exception);
         }
 

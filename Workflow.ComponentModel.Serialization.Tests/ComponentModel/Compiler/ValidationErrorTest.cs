@@ -531,7 +531,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
             var error = new ValidationError(null, 100);
 
             // Act
-            Exception exception = Record.Exception(() => error.ToString());
+            Exception? exception = Record.Exception(() => error.ToString());
 
             // Assert
             Assert.Null(exception);
