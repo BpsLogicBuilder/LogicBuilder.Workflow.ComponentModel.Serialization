@@ -14,6 +14,8 @@
     using System.Text;
     using System.Xml;
     using LogicBuilder.ComponentModel.Design.Serialization;
+    using System.Diagnostics.CodeAnalysis;
+    using System.Linq;
 
     #region Class WorkflowMarkupSerializer
     //Main serialization class for persisting the XOML
@@ -586,18 +588,16 @@
                 }
             }
 
-            foreach (PropertyInfo propInfo in properties)
+            foreach (PropertyInfo propInfo in properties.Where(p => p != null && !allProperties.ContainsKey(p.Name)))
             {
                 // Do not serialize properties that have corresponding dynamic properties.
-                if (propInfo != null && !allProperties.ContainsKey(propInfo.Name))
-                    allProperties.Add(propInfo.Name, propInfo);
+                allProperties.Add(propInfo.Name, propInfo);
             }
 
-            foreach (EventInfo eventInfo in events)
+            foreach (EventInfo eventInfo in events.Where(e => e != null && !allProperties.ContainsKey(e.Name)))
             {
                 // Do not serialize events that have corresponding dynamic properties.
-                if (eventInfo != null && !allProperties.ContainsKey(eventInfo.Name))
-                    allProperties.Add(eventInfo.Name, eventInfo);
+                allProperties.Add(eventInfo.Name, eventInfo);
             }
 
             using (ContentProperty contentProperty = new(serializationManager, serializer, obj))
@@ -1125,11 +1125,12 @@
                 if (visibility == DesignerSerializationVisibility.Hidden)
                     continue;
 
-                if (visibility != DesignerSerializationVisibility.Content && (!property.CanWrite || property.GetSetMethod() == null))
+                if (visibility != DesignerSerializationVisibility.Content 
+                    && (!property.CanWrite || property.GetSetMethod() == null)
+                    && (obj is not CodeObject || !typeof(ICollection).IsAssignableFrom(property.PropertyType)))
                 {
                     // work around for CodeObject which are ICollection needs to be serialized.
-                    if (obj is not CodeObject || !typeof(ICollection).IsAssignableFrom(property.PropertyType))
-                        continue;
+                    continue;
                 }
 
                 if (name == null || !name.Equals(property.Name))
@@ -1149,11 +1150,10 @@
                 throw new ArgumentNullException("serializationManager");
 
             List<EventInfo> events = [];
-            foreach (EventInfo evt in obj.GetType().GetEvents(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
+            foreach (EventInfo evt 
+                in obj.GetType().GetEvents(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy)
+                .Where(e => Helpers.GetSerializationVisibility(e) != DesignerSerializationVisibility.Hidden))
             {
-                if (Helpers.GetSerializationVisibility(evt) == DesignerSerializationVisibility.Hidden)
-                    continue;
-
                 events.Add(evt);
             }
 
@@ -1454,13 +1454,12 @@
                         {
                             property.SetValue(obj, memberValue, null);
                         }
-                        else if (typeof(ICollection<string>).IsAssignableFrom(memberValue.GetType()))
+                        else if (typeof(ICollection<string>).IsAssignableFrom(memberValue.GetType())
+                            && property.GetValue(obj, null) is ICollection<string> propVal 
+                            && memberValue is ICollection<string> deserializedValue)
                         {
-                            if (property.GetValue(obj, null) is ICollection<string> propVal && memberValue is ICollection<string> deserializedValue)
-                            {
-                                foreach (string content in deserializedValue)
-                                    propVal.Add(content);
-                            }
+                            foreach (string content in deserializedValue)
+                                propVal.Add(content);
                         }
                     }
                     catch (Exception e)
@@ -1565,25 +1564,9 @@
         {
             if (properties != null && !string.IsNullOrEmpty(propertyName))
             {
-                foreach (PropertyInfo property in properties)
-                {
-                    if (property.Name == propertyName)
-                        return property;
-                }
+                return properties.FirstOrDefault(p => p.Name == propertyName);
             }
-            return null;
-        }
 
-        private static EventInfo LookupEvent(IList<EventInfo> events, string eventName)
-        {
-            if (events != null && !string.IsNullOrEmpty(eventName))
-            {
-                foreach (EventInfo evt in events)
-                {
-                    if (evt.Name == eventName)
-                        return evt;
-                }
-            }
             return null;
         }
         #endregion
@@ -1990,6 +1973,7 @@
         #endregion
 
         #region ContentProperty Support
+        [ExcludeFromCodeCoverage]
         private class ContentProperty : IDisposable
         {
             private readonly WorkflowMarkupSerializationManager serializationManager;
@@ -2042,13 +2026,10 @@
                                 this.contentProperty.SetValue(this.parentObject, contentPropertyValue, null);
                             }
 
-                            if (contentPropertyValue != null)
+                            if (contentPropertyValue != null && reader != null)
                             {
-                                if (reader != null)
-                                {
-                                    this.contentPropertySerializer.OnBeforeDeserialize(this.serializationManager, contentPropertyValue);
-                                    this.contentPropertySerializer.OnBeforeDeserializeContents(this.serializationManager, contentPropertyValue);
-                                }
+                                this.contentPropertySerializer.OnBeforeDeserialize(this.serializationManager, contentPropertyValue);
+                                this.contentPropertySerializer.OnBeforeDeserializeContents(this.serializationManager, contentPropertyValue);
                             }
                         }
                         catch (Exception e)
@@ -2199,31 +2180,31 @@
                 }
             }
 
-            private PropertyInfo GetContentProperty(WorkflowMarkupSerializationManager serializationManager, object parentObject)
+            private PropertyInfo GetContentProperty(WorkflowMarkupSerializationManager serializationManagerLocal, object parentObjectLocal)
             {
-                PropertyInfo contentProperty = null;
+                PropertyInfo contentPropertyLocal = null;
 
                 string contentPropertyName = String.Empty;
-                object[] contentPropertyAttributes = parentObject.GetType().GetCustomAttributes(typeof(ContentPropertyAttribute), true);
+                object[] contentPropertyAttributes = parentObjectLocal.GetType().GetCustomAttributes(typeof(ContentPropertyAttribute), true);
                 if (contentPropertyAttributes != null && contentPropertyAttributes.Length > 0)
                     contentPropertyName = ((ContentPropertyAttribute)contentPropertyAttributes[0]).Name;
 
                 if (!String.IsNullOrEmpty(contentPropertyName))
                 {
-                    contentProperty = parentObject.GetType().GetProperty(contentPropertyName, BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.Public);
-                    if (contentProperty == null)
-                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_ContentPropertyCouldNotBeFound, contentPropertyName, parentObject.GetType().FullName)));
+                    contentPropertyLocal = parentObjectLocal.GetType().GetProperty(contentPropertyName, BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.Public);
+                    if (contentPropertyLocal == null)
+                        serializationManagerLocal.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_ContentPropertyCouldNotBeFound, contentPropertyName, parentObjectLocal.GetType().FullName)));
                 }
 
-                return contentProperty;
+                return contentPropertyLocal;
             }
         }
 
         private struct ContentInfo(object content, int lineNumber, int linePosition)
         {
-            public int LineNumber = lineNumber;
-            public int LinePosition = linePosition;
-            public object Content = content;
+            public readonly int LineNumber = lineNumber;
+            public readonly int LinePosition = linePosition;
+            public readonly object Content = content;
         }
         #endregion
 
@@ -2239,10 +2220,10 @@
         internal static string EnsureMarkupExtensionTypeName(XmlQualifiedName xmlQualifiedName)
         {
             string typeName = xmlQualifiedName.Name;
-            if (xmlQualifiedName.Namespace.Equals(StandardXomlKeys.Definitions_XmlNs, StringComparison.Ordinal))
+            if (xmlQualifiedName.Namespace.Equals(StandardXomlKeys.Definitions_XmlNs, StringComparison.Ordinal)
+                && typeName.Equals(typeof(Array).Name, StringComparison.Ordinal))
             {
-                if (typeName.Equals(typeof(Array).Name, StringComparison.Ordinal))
-                    typeName = typeof(ArrayExtension).Name;
+                typeName = typeof(ArrayExtension).Name;
             }
             return typeName;
         }
@@ -2257,10 +2238,10 @@
         private static bool IsMarkupExtension(XmlQualifiedName xmlQualifiedName)
         {
             bool markupExtension = false;
-            if (xmlQualifiedName.Namespace.Equals(StandardXomlKeys.Definitions_XmlNs, StringComparison.Ordinal))
+            if (xmlQualifiedName.Namespace.Equals(StandardXomlKeys.Definitions_XmlNs, StringComparison.Ordinal)
+                && (xmlQualifiedName.Name.Equals(typeof(Array).Name) || string.Equals(xmlQualifiedName.Name, "Null", StringComparison.Ordinal) || string.Equals(xmlQualifiedName.Name, typeof(NullExtension).Name, StringComparison.Ordinal) || string.Equals(xmlQualifiedName.Name, "Type", StringComparison.Ordinal) || string.Equals(xmlQualifiedName.Name, typeof(TypeExtension).Name, StringComparison.Ordinal)))
             {
-                if (xmlQualifiedName.Name.Equals(typeof(Array).Name) || string.Equals(xmlQualifiedName.Name, "Null", StringComparison.Ordinal) || string.Equals(xmlQualifiedName.Name, typeof(NullExtension).Name, StringComparison.Ordinal) || string.Equals(xmlQualifiedName.Name, "Type", StringComparison.Ordinal) || string.Equals(xmlQualifiedName.Name, typeof(TypeExtension).Name, StringComparison.Ordinal))
-                    markupExtension = true;
+                markupExtension = true;
             }
             return markupExtension;
         }

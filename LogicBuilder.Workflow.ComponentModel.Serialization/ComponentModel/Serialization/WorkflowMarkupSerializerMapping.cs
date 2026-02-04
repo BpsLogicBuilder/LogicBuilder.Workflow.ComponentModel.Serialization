@@ -314,14 +314,12 @@
             object[] xmlnsPrefixes = assembly.GetCustomAttributes(typeof(XmlnsPrefixAttribute), true);
             if (xmlnsPrefixes != null)
             {
-                foreach (XmlnsPrefixAttribute xmlnsPrefix in xmlnsPrefixes.OfType<XmlnsPrefixAttribute>())
-                {
-                    if (xmlnsPrefix.XmlNamespace.Equals(xmlNamespace, StringComparison.Ordinal))
-                    {
-                        prefix = xmlnsPrefix.Prefix;
-                        break;
-                    }
-                }
+                XmlnsPrefixAttribute xmlnsPrefix = xmlnsPrefixes.OfType<XmlnsPrefixAttribute>().FirstOrDefault
+                (
+                    p => p.XmlNamespace.Equals(xmlNamespace, StringComparison.Ordinal)
+                );
+                if (xmlnsPrefix != null)
+                    prefix = xmlnsPrefix.Prefix;
             }
 
             if (String.IsNullOrEmpty(prefix) || !IsNamespacePrefixUnique(prefix, manager.PrefixBasedMappings.Keys))
