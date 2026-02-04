@@ -152,7 +152,7 @@
                         }
                     }
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
                 {
                     serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, [serializableProperty.Name, value.GetType().FullName]), ex));
                     continue;
