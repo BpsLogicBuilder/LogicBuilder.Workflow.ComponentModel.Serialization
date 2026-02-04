@@ -13,7 +13,6 @@
     #region Mapping
     internal sealed class WorkflowMarkupSerializerMapping
     {
-        private static readonly Dictionary<string, Type> wellKnownTypes;
         private static readonly List<WorkflowMarkupSerializerMapping> wellKnownMappings;
 
         private static readonly WorkflowMarkupSerializerMapping Serialization;
@@ -27,11 +26,9 @@
 
         static WorkflowMarkupSerializerMapping()
         {
-            WorkflowMarkupSerializerMapping.wellKnownTypes = new Dictionary<string, Type>();
-
             //I am hard coding the well known mappings here instead of going through the assemblies as we want the mappings to be in
             //a specific order for performance optimization when searching for type
-            WorkflowMarkupSerializerMapping.wellKnownMappings = new List<WorkflowMarkupSerializerMapping>();
+            WorkflowMarkupSerializerMapping.wellKnownMappings = [];
 
             WorkflowMarkupSerializerMapping.Serialization = new WorkflowMarkupSerializerMapping(StandardXomlKeys.Definitions_XmlNs_Prefix, StandardXomlKeys.Definitions_XmlNs, "LogicBuilder.Workflow.ComponentModel.Serialization", Assembly.GetExecutingAssembly().FullName);
             WorkflowMarkupSerializerMapping.wellKnownMappings.Add(WorkflowMarkupSerializerMapping.Serialization);
@@ -63,7 +60,7 @@
 
         public override bool Equals(object value)
         {
-            if (!(value is WorkflowMarkupSerializerMapping mapping))
+            if (value is not WorkflowMarkupSerializerMapping mapping)
             {
                 return false;
             }
@@ -131,19 +128,8 @@
         {
             Type resolvedType = null;
 
-            List<WorkflowMarkupSerializerMapping> knownMappings = new List<WorkflowMarkupSerializerMapping>();
-            if (xmlns.Equals(StandardXomlKeys.WorkflowXmlNs, StringComparison.Ordinal))
-            {
-                if (!WorkflowMarkupSerializerMapping.wellKnownTypes.TryGetValue(typeName, out resolvedType))
-                {
-                    if (typeName.StartsWith("Rule", StringComparison.OrdinalIgnoreCase) ||
-                  typeName.EndsWith("Action", StringComparison.OrdinalIgnoreCase))
-                    {
-                        knownMappings.Add(WorkflowMarkupSerializerMapping.Rules);
-                    }
-                }
-            }
-            else if (xmlns.Equals(StandardXomlKeys.Definitions_XmlNs, StringComparison.Ordinal))
+            List<WorkflowMarkupSerializerMapping> knownMappings = [];
+            if (xmlns.Equals(StandardXomlKeys.Definitions_XmlNs, StringComparison.Ordinal))
             {
                 knownMappings.Add(WorkflowMarkupSerializerMapping.Serialization);
             }
@@ -164,8 +150,8 @@
 
         internal static void GetMappingsFromXmlNamespace(WorkflowMarkupSerializationManager serializationManager, string xmlNamespace, out IList<WorkflowMarkupSerializerMapping> matchingMappings, out IList<WorkflowMarkupSerializerMapping> collectedMappings)
         {
-            matchingMappings = new List<WorkflowMarkupSerializerMapping>();
-            collectedMappings = new List<WorkflowMarkupSerializerMapping>();
+            matchingMappings = [];
+            collectedMappings = [];
 
             if (serializationManager.WorkflowMarkupStack[typeof(XmlReader)] is XmlReader reader)
             {
@@ -196,7 +182,7 @@
                 }
                 else
                 {
-                    List<Assembly> referencedAssemblies = new List<Assembly>();
+                    List<Assembly> referencedAssemblies = [];
                     if (serializationManager.LocalAssembly != null)
                         referencedAssemblies.Add(serializationManager.LocalAssembly);
 
@@ -230,7 +216,7 @@
         internal static void GetMappingFromType(WorkflowMarkupSerializationManager manager, Type type, out WorkflowMarkupSerializerMapping matchingMapping, out IList<WorkflowMarkupSerializerMapping> collectedMappings)
         {
             matchingMapping = null;
-            collectedMappings = new List<WorkflowMarkupSerializerMapping>();
+            collectedMappings = [];
 
             string clrNamespace = type.Namespace ?? String.Empty;
             string xmlNamespace = String.Empty;
@@ -273,7 +259,7 @@
                         xmlNamespace = GetFormatedXmlNamespace(clrNamespace, assemblyName);
                     prefix = GetPrefix(manager, type.Assembly, xmlNamespace);
 
-                    WorkflowMarkupSerializerMapping mapping = new WorkflowMarkupSerializerMapping(prefix, xmlNamespace, clrNamespace, assemblyName, type.Assembly.FullName);
+                    WorkflowMarkupSerializerMapping mapping = new(prefix, xmlNamespace, clrNamespace, assemblyName, type.Assembly.FullName);
                     if (xmlnsDefinition.ClrNamespace.Equals(clrNamespace, StringComparison.Ordinal) && matchingMapping == null)
                         matchingMapping = mapping;
                     else
