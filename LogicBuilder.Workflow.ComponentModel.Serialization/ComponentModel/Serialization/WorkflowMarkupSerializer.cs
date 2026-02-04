@@ -1394,9 +1394,9 @@
                             {
                                 property.SetValue(obj, propValue, null);
                             }
-                            catch
+                            catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
                             {
-                                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerComplexPropertySetFailed, [propertyName, propertyName, obj.GetType().Name])));
+                                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerComplexPropertySetFailed, [propertyName, propertyName, obj.GetType().Name]), ex));
                             }
                         }
                     }
