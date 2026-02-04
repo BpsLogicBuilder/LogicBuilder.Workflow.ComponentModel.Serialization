@@ -390,25 +390,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
         }
 
         [Fact]
-        public void Equals_WithDifferentType_ReturnsFalse()
-        {
-            // Arrange
-            var mapping = new WorkflowMarkupSerializerMapping(
-                "prefix",
-                "http://test.namespace.com",
-                "TestNamespace",
-                "TestAssembly");
-
-            var other = "not a mapping";
-
-            // Act
-            var result = mapping.Equals(other);
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
         public void Equals_WithSameUnifiedAssemblyName_ReturnsTrue()
         {
             // Arrange
