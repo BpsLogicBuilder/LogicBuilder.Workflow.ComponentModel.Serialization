@@ -105,7 +105,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             finally
             {
                 _serializationManager.WorkflowMarkupStack.Pop();
-                writer.Dispose();
             }
         }
 

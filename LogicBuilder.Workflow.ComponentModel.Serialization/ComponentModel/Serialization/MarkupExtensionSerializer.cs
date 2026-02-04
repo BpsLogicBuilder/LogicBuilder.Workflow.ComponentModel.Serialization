@@ -152,9 +152,9 @@
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, [serializableProperty.Name, value.GetType().FullName])));
+                    serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, [serializableProperty.Name, value.GetType().FullName]), ex));
                     continue;
                 }
                 finally
