@@ -537,10 +537,9 @@
                         else
                         {
                             TypeConverter typeConverter = TypeDescriptor.GetConverter(obj.GetType());
-                            if (typeConverter != null && typeConverter.CanConvertTo(typeof(string)))
-                                stringValue = typeConverter.ConvertTo(null, CultureInfo.InvariantCulture, obj, typeof(string)) as string;
-                            else
-                                stringValue = Convert.ToString(obj, CultureInfo.InvariantCulture);
+                            stringValue = typeConverter != null && typeConverter.CanConvertTo(typeof(string))
+                                ? typeConverter.ConvertTo(null, CultureInfo.InvariantCulture, obj, typeof(string)) as string
+                                : Convert.ToString(obj, CultureInfo.InvariantCulture);
                         }
 
                         writer.WriteValue(stringValue);
@@ -1212,10 +1211,9 @@
             if (string.IsNullOrEmpty(errorMsg))
                 errorMsg = e?.Message ?? string.Empty;
 
-            if (reader is IXmlLineInfo xmlLineInfo)
-                return new WorkflowMarkupSerializationException(errorMsg, xmlLineInfo.LineNumber, xmlLineInfo.LinePosition);
-            else
-                return new WorkflowMarkupSerializationException(errorMsg, 0, 0);
+            return reader is IXmlLineInfo xmlLineInfo
+                ? new WorkflowMarkupSerializationException(errorMsg, xmlLineInfo.LineNumber, xmlLineInfo.LinePosition)
+                : new WorkflowMarkupSerializationException(errorMsg, 0, 0);
         }
         #endregion
 
@@ -2071,12 +2069,9 @@
 
             internal object GetContents()
             {
-                object value;
-                if (this.contentProperty != null)
-                    value = this.contentProperty.GetValue(this.parentObject, null);
-                else
-                    value = this.parentObjectSerializer.GetChildren(this.serializationManager, this.parentObject);
-                return value;
+                return this.contentProperty != null
+                    ? this.contentProperty.GetValue(this.parentObject, null)
+                    : this.parentObjectSerializer.GetChildren(this.serializationManager, this.parentObject);
             }
 
             internal void SetContents(IList<ContentInfo> contents)

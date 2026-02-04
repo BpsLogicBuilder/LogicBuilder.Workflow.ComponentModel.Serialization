@@ -285,10 +285,9 @@
                 }
 
                 typeName = typeName.Trim();
-                if (assembly != null)
-                    type = assembly.GetType(typeName, false);
-                else
-                    type = Type.GetType(fullyQualifiedTypeName, false);
+                type = assembly != null
+                    ? assembly.GetType(typeName, false)
+                    : Type.GetType(fullyQualifiedTypeName, false);
             }
             return type;
         }

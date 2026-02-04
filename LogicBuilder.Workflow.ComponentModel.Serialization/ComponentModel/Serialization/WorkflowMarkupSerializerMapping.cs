@@ -196,10 +196,9 @@
                                 string assemblyName = String.Empty;
                                 if (serializationManager.LocalAssembly != assembly)
                                 {
-                                    if (xmlnsDefinition.AssemblyName != null && xmlnsDefinition.AssemblyName.Trim().Length > 0)
-                                        assemblyName = xmlnsDefinition.AssemblyName;
-                                    else
-                                        assemblyName = assembly.FullName;
+                                    assemblyName = xmlnsDefinition.AssemblyName != null && xmlnsDefinition.AssemblyName.Trim().Length > 0
+                                        ? xmlnsDefinition.AssemblyName
+                                        : assembly.FullName;
                                 }
 
                                 if (xmlnsDefinition.XmlNamespace.Equals(xmlNamespace, StringComparison.Ordinal))
@@ -287,14 +286,9 @@
         {
             //
             // Handle DesignTimeType
-            if (type.Assembly == null)
-            {
-                return string.Empty;
-            }
-            else
-            {
-                return type.Assembly.FullName;
-            }
+            return type.Assembly == null
+                ? string.Empty
+                : type.Assembly.FullName;
         }
 
         //Format for the xmlnamespace: clr-namespace:[Namespace][;Assembly=[AssemblyName]]

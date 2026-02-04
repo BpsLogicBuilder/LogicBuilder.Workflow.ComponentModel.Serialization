@@ -28,7 +28,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
             if (value == null)
                 throw new ArgumentNullException("value");
 
-            if (!(value is CodeTypeReference reference))
+            if (value is not CodeTypeReference reference)
                 return string.Empty;
 
             // make the typename as best we can, and try to get the fully qualified name
@@ -55,15 +55,9 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
             // to make sure that writers (such as Xoml) are given types that exist in the target framework
             // This makes it the job of the rules designer or rules validator to not call the Xoml stack
             // with types that do not exist in the target framework
-            if (string.IsNullOrEmpty(assemblyFullName))
-            {
-                typeName = type.AssemblyQualifiedName;
-            }
-            else
-            {
-                typeName = string.Format(CultureInfo.InvariantCulture, "{0}, {1}", type.FullName, assemblyFullName);
-            }
-            return typeName;
+            return string.IsNullOrEmpty(assemblyFullName)
+                ? type.AssemblyQualifiedName
+                : string.Format(CultureInfo.InvariantCulture, "{0}, {1}", type.FullName, assemblyFullName);
         }
 
         protected internal override object DeserializeFromString(WorkflowMarkupSerializationManager serializationManager, Type propertyType, string value)

@@ -105,10 +105,9 @@
 
         public override object GetValue(object obj, BindingFlags invokeAttr, Binder binder, object[] index, CultureInfo culture)
         {
-            if (OnGetValue != null)
-                return OnGetValue(this, obj);
-            else
-                return null;
+            return OnGetValue != null
+                ? OnGetValue(this, obj)
+                : null;
         }
 
         public override void SetValue(object obj, object value, BindingFlags invokeAttr, Binder binder, object[] index, CultureInfo culture)
@@ -119,10 +118,9 @@
         public XmlQualifiedName GetXmlQualifiedName(WorkflowMarkupSerializationManager managerLocal, out string prefix)
         {
             prefix = String.Empty;
-            if (OnGetXmlQualifiedName != null)
-                return OnGetXmlQualifiedName(this, managerLocal, out prefix);
-            else
-                return null;
+            return OnGetXmlQualifiedName != null
+                ? OnGetXmlQualifiedName(this, managerLocal, out prefix)
+                : null;
         }
 
         public override ParameterInfo[] GetIndexParameters()
