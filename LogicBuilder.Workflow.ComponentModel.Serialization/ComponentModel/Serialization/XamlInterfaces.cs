@@ -12,13 +12,8 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
 {
     [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
-    public sealed class XmlnsDefinitionAttribute : Attribute
+    public sealed class XmlnsDefinitionAttribute(string xmlNamespace, string clrNamespace) : Attribute
     {
-        public XmlnsDefinitionAttribute(string xmlNamespace, string clrNamespace)
-        {
-            this.xmlNamespace = xmlNamespace ?? throw new ArgumentNullException("xmlNamespace");
-            this.clrNamespace = clrNamespace ?? throw new ArgumentNullException("clrNamespace");
-        }
         public string XmlNamespace
         {
             get { return this.xmlNamespace; }
@@ -33,23 +28,18 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
             set { this.assemblyName = value; }
         }
 
-        private readonly string xmlNamespace;
-        private readonly string clrNamespace;
+        private readonly string xmlNamespace = xmlNamespace ?? throw new ArgumentNullException("xmlNamespace");
+        private readonly string clrNamespace = clrNamespace ?? throw new ArgumentNullException("clrNamespace");
         private string assemblyName;
     }
 
     [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
-    public sealed class XmlnsPrefixAttribute : Attribute
+    public sealed class XmlnsPrefixAttribute(string xmlNamespace, string prefix) : Attribute
     {
-        private readonly string xmlNamespace;
-        private readonly string prefix;
+        private readonly string xmlNamespace = xmlNamespace ?? throw new ArgumentNullException("xmlNamespace");
+        private readonly string prefix = prefix ?? throw new ArgumentNullException("prefix");
 
-        public XmlnsPrefixAttribute(string xmlNamespace, string prefix)
-        {
-            this.xmlNamespace = xmlNamespace ?? throw new ArgumentNullException("xmlNamespace");
-            this.prefix = prefix ?? throw new ArgumentNullException("prefix");
-        }
         public string XmlNamespace
         {
             get { return this.xmlNamespace; }
@@ -62,13 +52,10 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
 
     [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Class)]
-    public sealed class RuntimeNamePropertyAttribute : Attribute
+    public sealed class RuntimeNamePropertyAttribute(string name) : Attribute
     {
-        private readonly string name = null;
-        public RuntimeNamePropertyAttribute(string name)
-        {
-            this.name = name;
-        }
+        private readonly string name = name;
+
         public string Name
         {
             get
@@ -96,14 +83,10 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
 
     [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
-    public sealed class ConstructorArgumentAttribute : Attribute
+    public sealed class ConstructorArgumentAttribute(string argumentName) : Attribute
     {
-        private readonly string argumentName;
+        private readonly string argumentName = argumentName;
 
-        public ConstructorArgumentAttribute(string argumentName)
-        {
-            this.argumentName = argumentName;
-        }
         public string ArgumentName
         {
             get { return this.argumentName; }
@@ -156,7 +139,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
                 throw new InvalidOperationException("typename");
 
             WorkflowMarkupSerializationManager manager = provider as WorkflowMarkupSerializationManager ?? throw new ArgumentNullException("provider");
-            if (!(manager.WorkflowMarkupStack[typeof(XmlReader)] is XmlReader reader))
+            if (manager.WorkflowMarkupStack[typeof(XmlReader)] is not XmlReader reader)
             {
                 Debug.Assert(false);
                 return this.typeName;
@@ -219,7 +202,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
     [ContentProperty("Items")]
     internal sealed class ArrayExtension : MarkupExtension
     {
-        private readonly ArrayList arrayElementList = new ArrayList();
+        private readonly ArrayList arrayElementList = [];
         private Type arrayType;
 
         public ArrayExtension()

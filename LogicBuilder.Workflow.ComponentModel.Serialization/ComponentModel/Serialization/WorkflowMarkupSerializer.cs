@@ -77,7 +77,7 @@
             {
                 throw new WorkflowMarkupSerializationException(xmlException.Message, xmlException, xmlException.LineNumber, xmlException.LinePosition);
             }
-            catch (Exception e)
+            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
             {
                 throw CreateSerializationError(e, xmlReader);
             }
@@ -218,7 +218,7 @@
             {
                 serializer.OnBeforeDeserialize(serializationManager, obj);
             }
-            catch (Exception e)
+            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
             {
                 serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
                 return;
@@ -244,7 +244,7 @@
                     props.AddRange(serializationManager.GetExtendedProperties(obj));
                     events.AddRange(serializer.GetEvents(serializationManager, obj));
                 }
-                catch (Exception e)
+                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                 {
                     serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerThrewException, obj.GetType(), e.Message), e, reader));
                     return;
@@ -298,7 +298,7 @@
             {
                 serializer.OnBeforeDeserializeContents(serializationManager, obj);
             }
-            catch (Exception e)
+            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
             {
                 serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
                 return;
@@ -309,7 +309,7 @@
             {
                 serializer.ClearChildren(serializationManager, obj);
             }
-            catch (Exception e)
+            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
             {
                 serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerThrewException, obj.GetType(), e.Message), e, reader));
                 return;
@@ -416,7 +416,7 @@
             {
                 serializer.OnAfterDeserialize(serializationManager, obj);
             }
-            catch (Exception e)
+            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
             {
                 serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
                 return;
@@ -486,7 +486,7 @@
                 serializer = serializationManager.GetSerializer(obj.GetType(), typeof(WorkflowMarkupSerializer)) as WorkflowMarkupSerializer;
 
             }
-            catch (Exception e)
+            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
             {
                 serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
                 return;
@@ -503,7 +503,7 @@
             {
                 serializer.OnBeforeSerialize(serializationManager, obj);
             }
-            catch (Exception e)
+            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
             {
                 serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
                 return;
@@ -580,7 +580,7 @@
                         properties.AddRange(serializationManager.GetExtendedProperties(obj));
                     events.AddRange(serializer.GetEvents(serializationManager, obj));
                 }
-                catch (Exception e)
+                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                 {
                     serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
                     return;
@@ -625,7 +625,7 @@
                             propertyInfoType = property.PropertyType;
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                     {
                         while (e is TargetInvocationException && e.InnerException != null)
                             e = e.InnerException;
@@ -665,7 +665,7 @@
                     {
                         propValueSerializer = serializationManager.GetSerializer(propertyValueType, typeof(WorkflowMarkupSerializer)) as WorkflowMarkupSerializer;
                     }
-                    catch (Exception e)
+                    catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                     {
                         serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
                         serializationManager.Context.Pop();
@@ -715,7 +715,7 @@
                             }
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                     {
                         serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, [propertyName, obj.GetType().FullName]), e));
                     }
@@ -730,7 +730,7 @@
                 {
                     serializer.OnBeforeSerializeContents(serializationManager, obj);
                 }
-                catch (Exception e)
+                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                 {
                     serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
                     return;
@@ -755,7 +755,7 @@
                             isReadOnly = (!property.CanWrite);
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                     {
                         while (e is TargetInvocationException && e.InnerException != null)
                             e = e.InnerException;
@@ -870,7 +870,7 @@
                         }
                     }
                 }
-                catch (Exception e)
+                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                 {
                     serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
                     return;
@@ -881,7 +881,7 @@
             {
                 serializer.OnAfterSerialize(serializationManager, obj);
             }
-            catch (Exception e)
+            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
             {
                 serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
                 return;
@@ -937,7 +937,7 @@
                     }
                 }
             }
-            catch
+            catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
             {
                 //We purposely eat all the exceptions as Convert.ChangeType can throw but in that case
                 //we continue with serialization
@@ -1248,7 +1248,7 @@
             {
                 type = serializationManager.GetType(xmlQualifiedName);
             }
-            catch (Exception e)
+            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
             {
                 serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerTypeNotResolvedWithInnerError, [GetClrFullName(serializationManager, xmlQualifiedName), e.Message]), e, reader));
                 return null;
@@ -1260,7 +1260,7 @@
                 {
                     type = serializationManager.GetType(new XmlQualifiedName(typename, xmlQualifiedName.Namespace));
                 }
-                catch (Exception e)
+                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                 {
                     serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerTypeNotResolvedWithInnerError, [GetClrFullName(serializationManager, xmlQualifiedName), e.Message]), e, reader));
                     return null;
@@ -1297,7 +1297,7 @@
                         obj = stringValue;
                     }
                 }
-                catch (Exception e)
+                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                 {
                     serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerCreateInstanceFailed, e.Message), reader));
                     return null;
@@ -1317,7 +1317,7 @@
                 {
                     obj = serializer.CreateInstance(serializationManager, type);
                 }
-                catch (Exception e)
+                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                 {
                     serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerCreateInstanceFailed, type.FullName, e.Message), reader));
                     return null;
@@ -1460,7 +1460,7 @@
                                 propVal.Add(content);
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                     {
                         while (e is TargetInvocationException && e.InnerException != null)
                             e = e.InnerException;
@@ -1468,7 +1468,7 @@
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
             {
                 while (e is TargetInvocationException && e.InnerException != null)
                     e = e.InnerException;
@@ -1633,7 +1633,7 @@
             {
                 argTokens = TokenizeAttributes(arguments);
             }
-            catch (Exception error)
+            catch (Exception error) when (!ExceptionUtility.IsCriticalException(error))
             {
                 serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_MarkupExtensionDeserializeFailed, attrValue, error.Message), reader));
                 return null;
@@ -1716,7 +1716,7 @@
                     properties.AddRange(serializer.GetProperties(serializationManager, obj));
                     properties.AddRange(serializationManager.GetExtendedProperties(obj));
                 }
-                catch (Exception e)
+                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                 {
                     serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e, reader));
                     return obj;
@@ -2016,7 +2016,7 @@
                                 {
                                     contentPropertyValue = serializer.CreateInstance(serializationManager, this.contentProperty.PropertyType);
                                 }
-                                catch (Exception e)
+                                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                                 {
                                     serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerCreateInstanceFailed, this.contentProperty.PropertyType.FullName, e.Message), reader));
                                     return;
@@ -2030,7 +2030,7 @@
                                 this.contentPropertySerializer.OnBeforeDeserializeContents(this.serializationManager, contentPropertyValue);
                             }
                         }
-                        catch (Exception e)
+                        catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                         {
                             this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e));
                         }
@@ -2052,7 +2052,7 @@
                         if (contentPropertyValue != null)
                             this.contentPropertySerializer.OnAfterDeserialize(this.serializationManager, contentPropertyValue);
                     }
-                    catch (Exception e)
+                    catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                     {
                         this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e));
                     }
@@ -2090,7 +2090,7 @@
                             i += 1;
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                     {
                         this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e, contents[i].LineNumber, contents[i].LinePosition));
                     }
@@ -2116,7 +2116,7 @@
                                 i++;
                             }
                         }
-                        catch (Exception e)
+                        catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                         {
                             this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e, contents[i].LineNumber, contents[i].LinePosition));
                         }
@@ -2140,7 +2140,7 @@
                                 content = this.contentPropertySerializer.DeserializeFromString(this.serializationManager, this.contentProperty.PropertyType, content as string);
                                 content = WorkflowMarkupSerializer.GetValueFromMarkupExtension(this.serializationManager, content);
                             }
-                            catch (Exception e)
+                            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                             {
                                 this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e, contents[0].LineNumber, contents[0].LinePosition));
                                 return;
@@ -2166,7 +2166,7 @@
                                 }
                                 this.contentProperty.SetValue(this.parentObject, content, null);
                             }
-                            catch (Exception e)
+                            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
                             {
                                 this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e, contents[0].LineNumber, contents[0].LinePosition));
                             }
@@ -2195,7 +2195,7 @@
             }
         }
 
-        private struct ContentInfo(object content, int lineNumber, int linePosition)
+        private readonly struct ContentInfo(object content, int lineNumber, int linePosition)
         {
             public readonly int LineNumber = lineNumber;
             public readonly int LinePosition = linePosition;

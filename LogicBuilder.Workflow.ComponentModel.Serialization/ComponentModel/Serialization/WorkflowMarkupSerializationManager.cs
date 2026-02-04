@@ -17,19 +17,19 @@
     {
         private Assembly localAssembly = null;
         private int writerDepth = 0;
-        private readonly ContextStack workflowMarkupStack = new ContextStack();
+        private readonly ContextStack workflowMarkupStack = new();
         // Stack to keep a list of objects being serialized, to avoid stack overflow
-        private readonly Stack serializationStack = new Stack();
+        private readonly Stack serializationStack = new();
         private IDesignerSerializationManager serializationManager;
         private readonly bool designMode = false;
         internal event EventHandler<WorkflowMarkupElementEventArgs> FoundDefTag;
 
         //These are temporary variables for speedy lookup
-        private readonly Dictionary<int, WorkflowMarkupSerializerMapping> clrNamespaceBasedMappings = new Dictionary<int, WorkflowMarkupSerializerMapping>();
-        private readonly Dictionary<string, List<WorkflowMarkupSerializerMapping>> xmlNamespaceBasedMappings = new Dictionary<string, List<WorkflowMarkupSerializerMapping>>();
-        private readonly Dictionary<string, List<WorkflowMarkupSerializerMapping>> prefixBasedMappings = new Dictionary<string, List<WorkflowMarkupSerializerMapping>>();
+        private readonly Dictionary<int, WorkflowMarkupSerializerMapping> clrNamespaceBasedMappings = [];
+        private readonly Dictionary<string, List<WorkflowMarkupSerializerMapping>> xmlNamespaceBasedMappings = [];
+        private readonly Dictionary<string, List<WorkflowMarkupSerializerMapping>> prefixBasedMappings = [];
         private List<WorkflowMarkupSerializer> extendedPropertiesProviders;
-        private readonly Dictionary<XmlQualifiedName, Type> cachedXmlQualifiedNameTypes = new Dictionary<XmlQualifiedName, Type>();
+        private readonly Dictionary<XmlQualifiedName, Type> cachedXmlQualifiedNameTypes = [];
 
         public WorkflowMarkupSerializationManager(IDesignerSerializationManager manager)
         {
@@ -122,7 +122,7 @@
             if (!this.clrNamespaceBasedMappings.TryGetValue(key, out WorkflowMarkupSerializerMapping mappingForType))
             {
                 WorkflowMarkupSerializerMapping.GetMappingFromType(this, type, out mappingForType, out IList<WorkflowMarkupSerializerMapping> collectedMappings);
-                AddMappings(new List<WorkflowMarkupSerializerMapping>(new WorkflowMarkupSerializerMapping[] { mappingForType }));
+                AddMappings(new List<WorkflowMarkupSerializerMapping>([mappingForType]));
                 AddMappings(collectedMappings);
             }
 
@@ -160,7 +160,7 @@
                     AddMappings(matchingMappings);
                     AddMappings(collectedMappings);
 
-                    xmlnsMappings = new List<WorkflowMarkupSerializerMapping>(matchingMappings);
+                    xmlnsMappings = [.. matchingMappings];
                 }
 
                 foreach (WorkflowMarkupSerializerMapping xmlnsMapping in xmlnsMappings)
@@ -194,12 +194,8 @@
                         {
                             resolvedType = GetType(assemblyQualifiedName);
                         }
-                        catch
+                        catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
                         {
-                            // 
-
-
-
                         }
 
                         if (resolvedType == null)
@@ -246,9 +242,8 @@
                 {
                     type = this.serializationManager.GetType(typeName);
                 }
-                catch
+                catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
                 {
-                    //Debug.Assert(false, "VSIP framwork threw exception on resolving type." + e.ToString());
                 }
             }
 
@@ -276,11 +271,8 @@
                     {
                         assembly = Assembly.Load(assemblyName);
                     }
-                    catch
+                    catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
                     {
-                        // 
-
-
                     }
                 }
 
@@ -352,14 +344,14 @@
 
                 if (!this.xmlNamespaceBasedMappings.TryGetValue(mapping.XmlNamespace, out List<WorkflowMarkupSerializerMapping> xmlnsMappings))
                 {
-                    xmlnsMappings = new List<WorkflowMarkupSerializerMapping>();
+                    xmlnsMappings = [];
                     this.xmlNamespaceBasedMappings.Add(mapping.XmlNamespace, xmlnsMappings);
                 }
                 xmlnsMappings.Add(mapping);
 
                 if (!this.prefixBasedMappings.TryGetValue(mapping.Prefix, out List<WorkflowMarkupSerializerMapping> prefixMappings))
                 {
-                    prefixMappings = new List<WorkflowMarkupSerializerMapping>();
+                    prefixMappings = [];
                     this.prefixBasedMappings.Add(mapping.Prefix, prefixMappings);
                 }
                 prefixMappings.Add(mapping);
@@ -370,18 +362,17 @@
         {
             get
             {
-                if (this.extendedPropertiesProviders == null)
-                    this.extendedPropertiesProviders = new List<WorkflowMarkupSerializer>();
+                this.extendedPropertiesProviders ??= [];
                 return this.extendedPropertiesProviders;
             }
         }
 
         internal ExtendedPropertyInfo[] GetExtendedProperties(object extendee)
         {
-            List<ExtendedPropertyInfo> extendedProperties = new List<ExtendedPropertyInfo>();
+            List<ExtendedPropertyInfo> extendedProperties = [];
             foreach (WorkflowMarkupSerializer markupSerializer in ExtendedPropertiesProviders)
                 extendedProperties.AddRange(markupSerializer.GetExtendedProperties(this, extendee));
-            return extendedProperties.ToArray();
+            return [.. extendedProperties];
         }
         #endregion
 

@@ -1,6 +1,5 @@
-﻿using System.CodeDom;
-using System;
-using System.Collections.Generic;
+﻿using System;
+using System.CodeDom;
 using System.Globalization;
 using System.Text;
 
@@ -83,7 +82,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
                     return result;
                 }
             }
-            catch (Exception)
+            catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
             {
                 // something went wrong getting the type, so simply pass in the string and
                 // let CodeTypeReference figure it out. Note that CodeTypeReference has a method
