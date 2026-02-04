@@ -557,7 +557,7 @@
                 {
                     writer.WriteValue(obj);
                 }
-                // For Key properties, we don;t want to get the extended properties
+                // For Key properties, we don't want to get the extended properties
                 if (!dictionaryKey)
                     properties.AddRange(serializationManager.GetExtendedProperties(obj));
             }
@@ -586,24 +586,18 @@
                 }
             }
 
-            if (properties != null)
+            foreach (PropertyInfo propInfo in properties)
             {
-                foreach (PropertyInfo propInfo in properties)
-                {
-                    // Do not serialize properties that have corresponding dynamic properties.
-                    if (propInfo != null && !allProperties.ContainsKey(propInfo.Name))
-                        allProperties.Add(propInfo.Name, propInfo);
-                }
+                // Do not serialize properties that have corresponding dynamic properties.
+                if (propInfo != null && !allProperties.ContainsKey(propInfo.Name))
+                    allProperties.Add(propInfo.Name, propInfo);
             }
 
-            if (events != null)
+            foreach (EventInfo eventInfo in events)
             {
-                foreach (EventInfo eventInfo in events)
-                {
-                    // Do not serialize events that have corresponding dynamic properties.
-                    if (eventInfo != null && !allProperties.ContainsKey(eventInfo.Name))
-                        allProperties.Add(eventInfo.Name, eventInfo);
-                }
+                // Do not serialize events that have corresponding dynamic properties.
+                if (eventInfo != null && !allProperties.ContainsKey(eventInfo.Name))
+                    allProperties.Add(eventInfo.Name, eventInfo);
             }
 
             using (ContentProperty contentProperty = new(serializationManager, serializer, obj))

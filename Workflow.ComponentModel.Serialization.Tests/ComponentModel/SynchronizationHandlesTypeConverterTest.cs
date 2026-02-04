@@ -185,7 +185,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel
             string input = "handle\\,with\\,commas, normalHandle";
 
             // Act
-            var result = _converter.ConvertFrom(null, CultureInfo.InvariantCulture, input) as ICollection<string>;
+            var result = _converter.ConvertFrom(null, CultureInfo.InvariantCulture, input) as ICollection<string> ?? Array.Empty<string>();
 
             // Assert
             Assert.NotNull(result);
@@ -201,7 +201,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel
             string input = "  handle1  ,  handle2  ";
 
             // Act
-            var result = _converter.ConvertFrom(null, CultureInfo.InvariantCulture, input) as ICollection<string>;
+            var result = _converter.ConvertFrom(null, CultureInfo.InvariantCulture, input) as ICollection<string> ?? Array.Empty<string>();
 
             // Assert
             Assert.NotNull(result);
@@ -217,7 +217,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel
             string input = "handle1\r\nhandle2\nhandle3";
 
             // Act
-            var result = _converter.ConvertFrom(null, CultureInfo.InvariantCulture, input) as ICollection<string>;
+            var result = _converter.ConvertFrom(null, CultureInfo.InvariantCulture, input) as ICollection<string> ?? Array.Empty<string>();
 
             // Assert
             Assert.NotNull(result);
@@ -234,7 +234,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel
             string input = "handle1, handle2, handle1, handle3";
 
             // Act
-            var result = _converter.ConvertFrom(null, CultureInfo.InvariantCulture, input) as ICollection<string>;
+            var result = _converter.ConvertFrom(null, CultureInfo.InvariantCulture, input) as ICollection<string> ?? Array.Empty<string>();
 
             // Assert
             Assert.NotNull(result);
@@ -248,7 +248,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel
             string input = "handle1,  ,handle2,   ";
 
             // Act
-            var result = _converter.ConvertFrom(null, CultureInfo.InvariantCulture, input) as ICollection<string>;
+            var result = _converter.ConvertFrom(null, CultureInfo.InvariantCulture, input) as ICollection<string> ?? Array.Empty<string>();
 
             // Assert
             Assert.NotNull(result);

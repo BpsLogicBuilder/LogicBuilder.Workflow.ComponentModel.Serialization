@@ -121,6 +121,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Design
         public void CreateXmlWriter_WithNull_ReturnsNull()
         {
             // Arrange
+            System.Diagnostics.Trace.Listeners.Clear();
             object? nullOutput = null;
 
             // Act
