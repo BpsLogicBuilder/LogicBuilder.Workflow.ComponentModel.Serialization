@@ -94,7 +94,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
         {
             // Arrange
             var sb = new StringBuilder();
-            var writer = XmlWriter.Create(sb);
+            using var writer = XmlWriter.Create(sb);
             _serializationManager.WorkflowMarkupStack.Push(writer);
 
             try

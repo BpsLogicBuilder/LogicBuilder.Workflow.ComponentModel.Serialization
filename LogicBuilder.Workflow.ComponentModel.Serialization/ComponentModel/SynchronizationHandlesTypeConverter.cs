@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
+using System.Linq;
+using System.Text;
 
 namespace LogicBuilder.Workflow.ComponentModel
 {
@@ -44,30 +46,29 @@ namespace LogicBuilder.Workflow.ComponentModel
             if (synchronizationHandles == null)
                 return stringifiedValue;
 
-            foreach (string handle in synchronizationHandles)
+            StringBuilder stringList = new();
+            foreach (string handle in synchronizationHandles.Where(h => h != null))
             {
-                if (handle == null)
-                    continue;
-                if (stringifiedValue != string.Empty)
-                    stringifiedValue += ", ";
-                stringifiedValue += handle.Replace(",", "\\,");
+                if (stringList.Length != 0)
+                    stringList.Append(", ");
+                stringList.Append(handle.Replace(",", "\\,"));
             }
 
-            return stringifiedValue;
+            return stringList.ToString();
         }
 
         internal static ICollection<String> UnStringify(string stringifiedValue)
         {
-            ICollection<String> synchronizationHandles = [];
-            stringifiedValue = stringifiedValue?.Replace("\\,", ">") ?? "";
-            foreach (string handle in stringifiedValue.Split([',', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
-            {
-                string realHandle = handle.Trim().Replace('>', ',');
-                if (realHandle != string.Empty && !synchronizationHandles.Contains(realHandle))
-                    synchronizationHandles.Add(realHandle);
-            }
+            return (stringifiedValue?.Replace("\\,", ">") ?? "")
+                .Split([',', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+                .Aggregate(new List<string>(), (list, handle) =>
+                {
+                    string realHandle = handle.Trim().Replace('>', ',');
+                    if (realHandle != string.Empty && !list.Contains(realHandle))
+                        list.Add(realHandle);
 
-            return synchronizationHandles;
+                    return list;
+                });
         }
     }
 }

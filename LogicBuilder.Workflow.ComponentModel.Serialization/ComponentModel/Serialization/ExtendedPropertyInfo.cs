@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Linq;
     using System.Reflection;
     using System.Xml;
 
@@ -17,11 +18,11 @@
     internal sealed class ExtendedPropertyInfo : PropertyInfo
     {
         #region Members and Constructors
-        private PropertyInfo realPropertyInfo = null;
-        private GetValueHandler OnGetValue;
-        private SetValueHandler OnSetValue;
-        private GetQualifiedNameHandler OnGetXmlQualifiedName;
-        private WorkflowMarkupSerializationManager manager = null;
+        private readonly PropertyInfo realPropertyInfo = null;
+        private readonly GetValueHandler OnGetValue;
+        private readonly SetValueHandler OnSetValue;
+        private readonly GetQualifiedNameHandler OnGetXmlQualifiedName;
+        private readonly WorkflowMarkupSerializationManager manager = null;
 
         internal ExtendedPropertyInfo(PropertyInfo propertyInfo, GetValueHandler getValueHandler, SetValueHandler setValueHandler, GetQualifiedNameHandler qualifiedNameHandler)
         {
@@ -115,11 +116,11 @@
             OnSetValue?.Invoke(this, obj, value);
         }
 
-        public XmlQualifiedName GetXmlQualifiedName(WorkflowMarkupSerializationManager manager, out string prefix)
+        public XmlQualifiedName GetXmlQualifiedName(WorkflowMarkupSerializationManager managerLocal, out string prefix)
         {
             prefix = String.Empty;
             if (OnGetXmlQualifiedName != null)
-                return OnGetXmlQualifiedName(this, manager, out prefix);
+                return OnGetXmlQualifiedName(this, managerLocal, out prefix);
             else
                 return null;
         }
@@ -195,14 +196,9 @@
         }
         internal static bool IsExtendedProperty(WorkflowMarkupSerializationManager manager, IList<PropertyInfo> propInfos, XmlQualifiedName xmlQualifiedName)
         {
-            foreach (PropertyInfo propInfo in propInfos)
+            foreach (ExtendedPropertyInfo extendedProperty in propInfos.OfType<ExtendedPropertyInfo>())
             {
-                ExtendedPropertyInfo extendedProperty = propInfo as ExtendedPropertyInfo;
-                if (extendedProperty == null)
-                    continue;
-
-                string prefix = String.Empty;
-                XmlQualifiedName qualifiedPropertyName = extendedProperty.GetXmlQualifiedName(manager, out prefix);
+                XmlQualifiedName qualifiedPropertyName = extendedProperty.GetXmlQualifiedName(manager, out _);
                 if (qualifiedPropertyName.Name.Equals(xmlQualifiedName.Name, StringComparison.Ordinal)
                     && qualifiedPropertyName.Namespace.Equals(xmlQualifiedName.Namespace, StringComparison.Ordinal))
                 {

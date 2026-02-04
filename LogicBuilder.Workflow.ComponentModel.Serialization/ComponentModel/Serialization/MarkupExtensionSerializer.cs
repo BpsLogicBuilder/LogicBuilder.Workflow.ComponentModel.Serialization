@@ -6,6 +6,7 @@
     using System.ComponentModel;
     using System.ComponentModel.Design.Serialization;
     using System.Diagnostics;
+    using System.Linq;
     using System.Reflection;
     using System.Text;
     using System.Xml;
@@ -43,48 +44,45 @@
 
             Dictionary<string, string> constructorArguments = null;
             InstanceDescriptor instanceDescriptor = this.GetInstanceDescriptor(serializationManager, value);
-            if (instanceDescriptor != null)
+            if (instanceDescriptor != null && instanceDescriptor.MemberInfo is ConstructorInfo ctorInfo)
             {
-                if (instanceDescriptor.MemberInfo is ConstructorInfo ctorInfo)
+                ParameterInfo[] parameters = ctorInfo.GetParameters();
+                if (parameters != null && parameters.Length == instanceDescriptor.Arguments.Count)
                 {
-                    ParameterInfo[] parameters = ctorInfo.GetParameters();
-                    if (parameters != null && parameters.Length == instanceDescriptor.Arguments.Count)
+                    int i = 0;
+                    foreach (object argValue in instanceDescriptor.Arguments)
                     {
-                        int i = 0;
-                        foreach (object argValue in instanceDescriptor.Arguments)
+                        constructorArguments ??= [];
+                        // 
+                        if (argValue == null)
+                            continue;
+                        constructorArguments.Add(parameters[i].Name, parameters[i++].Name);
+                        if (index++ > 0)
+                            writer.WriteString(MarkupExtensionSerializer.CompactFormatPropertySeperator);
+                        else
+                            writer.WriteString(MarkupExtensionSerializer.CompactFormatTypeSeperator);
+                        if (argValue.GetType() == typeof(string))
                         {
-                            constructorArguments ??= [];
-                            // 
-                            if (argValue == null)
-                                continue;
-                            constructorArguments.Add(parameters[i].Name, parameters[i++].Name);
-                            if (index++ > 0)
-                                writer.WriteString(MarkupExtensionSerializer.CompactFormatPropertySeperator);
-                            else
-                                writer.WriteString(MarkupExtensionSerializer.CompactFormatTypeSeperator);
-                            if (argValue.GetType() == typeof(string))
+                            writer.WriteString(CreateEscapedValue(argValue as string));
+                        }
+                        else if (argValue is System.Type)
+                        {
+                            Type argType = argValue as Type;
+                            if (argType?.Assembly != null)
                             {
-                                writer.WriteString(CreateEscapedValue(argValue as string));
-                            }
-                            else if (argValue is System.Type)
-                            {
-                                Type argType = argValue as Type;
-                                if (argType?.Assembly != null)
-                                {
-                                    XmlQualifiedName typeQualifiedName = serializationManager.GetXmlQualifiedName(argType, out _);
-                                    writer.WriteQualifiedName(XmlConvert.EncodeName(typeQualifiedName.Name), typeQualifiedName.Namespace);
-                                }
-                                else
-                                {
-                                    writer.WriteString(argType?.FullName ?? string.Empty);
-                                }
+                                XmlQualifiedName typeQualifiedName = serializationManager.GetXmlQualifiedName(argType, out _);
+                                writer.WriteQualifiedName(XmlConvert.EncodeName(typeQualifiedName.Name), typeQualifiedName.Namespace);
                             }
                             else
                             {
-                                string stringValue = base.SerializeToString(serializationManager, argValue);
-                                if (stringValue != null)
-                                    writer.WriteString(stringValue);
+                                writer.WriteString(argType?.FullName ?? string.Empty);
                             }
+                        }
+                        else
+                        {
+                            string stringValue = base.SerializeToString(serializationManager, argValue);
+                            if (stringValue != null)
+                                writer.WriteString(stringValue);
                         }
                     }
                 }
@@ -95,68 +93,74 @@
                 .. GetProperties(serializationManager, value),
                 .. serializationManager.GetExtendedProperties(value),
             ];
-            foreach (PropertyInfo serializableProperty in properties)
+
+            foreach 
+            (
+                PropertyInfo serializableProperty in properties.Where
+                (
+                    p => Helpers.GetSerializationVisibility(p) != DesignerSerializationVisibility.Hidden 
+                    && p.CanRead 
+                    && p.GetValue(value, null) != null
+                )
+            )
             {
-                if (Helpers.GetSerializationVisibility(serializableProperty) != DesignerSerializationVisibility.Hidden && serializableProperty.CanRead && serializableProperty.GetValue(value, null) != null)
+                if (serializationManager.GetSerializer(serializableProperty.PropertyType, typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer propSerializer)
                 {
-                    if (serializationManager.GetSerializer(serializableProperty.PropertyType, typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer propSerializer)
-                    {
-                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNotAvailable, serializableProperty.PropertyType.FullName)));
+                    serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNotAvailable, serializableProperty.PropertyType.FullName)));
+                    continue;
+                }
+
+                if (constructorArguments != null)
+                {
+                    object[] attributes = serializableProperty.GetCustomAttributes(typeof(ConstructorArgumentAttribute), false);
+                    if (attributes.Length > 0 && constructorArguments.ContainsKey((attributes[0] as ConstructorArgumentAttribute).ArgumentName))
+                        // Skip this property, it has already been represented by a constructor parameter
                         continue;
-                    }
+                }
 
-                    if (constructorArguments != null)
+                //Get the property serializer so that we can convert the bind object to string
+                serializationManager.Context.Push(serializableProperty);
+                try
+                {
+                    object propValue = serializableProperty.GetValue(value, null);
+                    if (propSerializer.ShouldSerializeValue(serializationManager, propValue))
                     {
-                        object[] attributes = serializableProperty.GetCustomAttributes(typeof(ConstructorArgumentAttribute), false);
-                        if (attributes.Length > 0 && constructorArguments.ContainsKey((attributes[0] as ConstructorArgumentAttribute).ArgumentName))
-                            // Skip this property, it has already been represented by a constructor parameter
-                            continue;
-                    }
-
-                    //Get the property serializer so that we can convert the bind object to string
-                    serializationManager.Context.Push(serializableProperty);
-                    try
-                    {
-                        object propValue = serializableProperty.GetValue(value, null);
-                        if (propSerializer.ShouldSerializeValue(serializationManager, propValue))
+                        //We do not allow nested bind syntax
+                        if (propSerializer.CanSerializeToString(serializationManager, propValue))
                         {
-                            //We do not allow nested bind syntax
-                            if (propSerializer.CanSerializeToString(serializationManager, propValue))
-                            {
-                                if (index++ > 0)
-                                    writer.WriteString(MarkupExtensionSerializer.CompactFormatPropertySeperator);
-                                else
-                                    writer.WriteString(MarkupExtensionSerializer.CompactFormatTypeSeperator);
-                                writer.WriteString(serializableProperty.Name);
-                                writer.WriteString(MarkupExtensionSerializer.CompactFormatNameValueSeperator);
+                            if (index++ > 0)
+                                writer.WriteString(MarkupExtensionSerializer.CompactFormatPropertySeperator);
+                            else
+                                writer.WriteString(MarkupExtensionSerializer.CompactFormatTypeSeperator);
+                            writer.WriteString(serializableProperty.Name);
+                            writer.WriteString(MarkupExtensionSerializer.CompactFormatNameValueSeperator);
 
-                                if (propValue.GetType() == typeof(string))
-                                {
-                                    writer.WriteString(CreateEscapedValue(propValue as string));
-                                }
-                                else
-                                {
-                                    string stringValue = propSerializer.SerializeToString(serializationManager, propValue);
-                                    if (stringValue != null)
-                                        writer.WriteString(stringValue);
-                                }
+                            if (propValue.GetType() == typeof(string))
+                            {
+                                writer.WriteString(CreateEscapedValue(propValue as string));
                             }
                             else
                             {
-                                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, [serializableProperty.Name, value.GetType().FullName])));
+                                string stringValue = propSerializer.SerializeToString(serializationManager, propValue);
+                                if (stringValue != null)
+                                    writer.WriteString(stringValue);
                             }
                         }
+                        else
+                        {
+                            serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, [serializableProperty.Name, value.GetType().FullName])));
+                        }
                     }
-                    catch
-                    {
-                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, [serializableProperty.Name, value.GetType().FullName])));
-                        continue;
-                    }
-                    finally
-                    {
-                        Debug.Assert((PropertyInfo)serializationManager.Context.Current == serializableProperty, "Serializer did not remove an object it pushed into stack.");
-                        serializationManager.Context.Pop();
-                    }
+                }
+                catch
+                {
+                    serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, [serializableProperty.Name, value.GetType().FullName])));
+                    continue;
+                }
+                finally
+                {
+                    Debug.Assert((PropertyInfo)serializationManager.Context.Current == serializableProperty, "Serializer did not remove an object it pushed into stack.");
+                    serializationManager.Context.Pop();
                 }
             }
             writer.WriteString(MarkupExtensionSerializer.CompactFormatEnd);

@@ -242,7 +242,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Design
             public string ContentProperty { get; set; } = string.Empty;
 
             [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-            public string HiddenField = string.Empty;
+            public readonly string HiddenField = string.Empty;
 
             public static void NormalMethod() { }
         }

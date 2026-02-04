@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace LogicBuilder.Workflow.ComponentModel.Compiler
 {
@@ -53,15 +54,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Compiler
         {
             get
             {
-                if (Count > 0)
-                {
-                    foreach (ValidationError e in this)
-                    {
-                        if (e != null && !e.IsWarning)
-                            return true;
-                    }
-                }
-                return false;
+                return this.OfType<ValidationError>().Any(e => !(e?.IsWarning == true));
             }
         }
 
@@ -69,15 +62,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Compiler
         {
             get
             {
-                if (Count > 0)
-                {
-                    foreach (ValidationError e in this)
-                    {
-                        if (e != null && e.IsWarning)
-                            return true;
-                    }
-                }
-                return false;
+                return this.OfType<ValidationError>().Any(e => e?.IsWarning == true);
             }
         }
 
