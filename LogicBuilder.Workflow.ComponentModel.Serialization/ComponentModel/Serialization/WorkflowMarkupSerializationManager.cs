@@ -196,6 +196,8 @@
                         }
                         catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
                         {
+                            // Intentionally ignore non-critical exceptions when resolving the type.
+                            // Fallback logic below will handle the case where resolvedType remains null.
                         }
 
                         if (resolvedType == null)
@@ -244,6 +246,8 @@
                 }
                 catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
                 {
+                    // Intentionally ignore non-critical exceptions when resolving the type.
+                    // Fallback logic below will handle the case where type remains null.
                 }
             }
 
@@ -273,6 +277,8 @@
                     }
                     catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
                     {
+                        // Intentionally ignore non-critical exceptions when the assembly cannot be loaded.
+                        // Fallback logic below will handle the case where assembly is null.
                     }
                 }
 
