@@ -182,13 +182,12 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
             type = manager.GetType(new XmlQualifiedName(typename, reader.LookupNamespace(string.Empty)));
 
             // To Support Beta2 format
-            if (type == null)
+            if (type == null && manager.GetService(typeof(ITypeResolutionService)) == null)
             {
                 // If not design mode, get the value from serialization manager
                 // At design time, we need to get the type from ITypeProvider else
                 // we need to store the string in the hashtable we maintain internally
-                if (type == null && manager.GetService(typeof(ITypeResolutionService)) == null)
-                    type = manager.SerializationManager.GetType(typename);
+                type = manager.SerializationManager.GetType(typename);
             }
             if (type != null)
                 return type;

@@ -176,6 +176,7 @@ namespace LogicBuilder.Workflow.Tests
         public void SRDescriptionAttribute_ReturnsEmptyString_WhenResourceKeyDoesNotExist()
         {
             // Arrange & Act
+            System.Diagnostics.Trace.Listeners.Clear();
             var attribute = new SRDescriptionAttribute("NonExistentKey12345");
 
             // Assert
