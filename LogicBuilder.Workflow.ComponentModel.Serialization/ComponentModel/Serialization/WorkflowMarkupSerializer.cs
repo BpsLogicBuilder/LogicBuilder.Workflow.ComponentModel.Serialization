@@ -27,7 +27,7 @@
             if (reader == null)
                 throw new ArgumentNullException("reader");
 
-            DesignerSerializationManager designerSerializationManager = new DesignerSerializationManager();
+            DesignerSerializationManager designerSerializationManager = new();
             using (designerSerializationManager.CreateSession())
             {
                 return Deserialize(designerSerializationManager, reader);
@@ -94,7 +94,7 @@
             if (writer == null)
                 throw new ArgumentNullException("writer");
 
-            DesignerSerializationManager designerSerializationManager = new DesignerSerializationManager();
+            DesignerSerializationManager designerSerializationManager = new();
             using (designerSerializationManager.CreateSession())
             {
                 Serialize(designerSerializationManager, writer, obj);
@@ -111,7 +111,7 @@
                 throw new ArgumentNullException("writer");
 
             WorkflowMarkupSerializationManager markupSerializationManager = serializationManager as WorkflowMarkupSerializationManager ?? new WorkflowMarkupSerializationManager(serializationManager);
-            StringWriter xomlStringWriter = new StringWriter(CultureInfo.InvariantCulture);
+            StringWriter xomlStringWriter = new(CultureInfo.InvariantCulture);
             XmlWriter xmlWriter = Helpers.CreateXmlWriter(xomlStringWriter);
             markupSerializationManager.WorkflowMarkupStack.Push(xmlWriter);
             markupSerializationManager.WorkflowMarkupStack.Push(xomlStringWriter);
@@ -154,7 +154,7 @@
                     // Lets ignore the Definition tags if nobody is interested
                     //
                     string decodedName = XmlConvert.DecodeName(reader.LocalName);
-                    XmlQualifiedName xmlQualifiedName = new XmlQualifiedName(decodedName, reader.LookupNamespace(reader.Prefix));
+                    XmlQualifiedName xmlQualifiedName = new(decodedName, reader.LookupNamespace(reader.Prefix));
                     if (xmlQualifiedName.Namespace.Equals(StandardXomlKeys.Definitions_XmlNs, StringComparison.Ordinal) &&
                         !IsMarkupExtension(xmlQualifiedName) &&
                         !ExtendedPropertyInfo.IsExtendedProperty(serializationManager, xmlQualifiedName))
@@ -206,7 +206,7 @@
                 return;
 
             // get the serializer
-            if (!(serializationManager.GetSerializer(obj.GetType(), typeof(WorkflowMarkupSerializer)) is WorkflowMarkupSerializer serializer))
+            if (serializationManager.GetSerializer(obj.GetType(), typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer serializer)
             {
                 serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerNotAvailable, obj.GetType().FullName), reader));
                 return;
@@ -225,8 +225,8 @@
             bool isEmptyElement = reader.IsEmptyElement;
             //string elementNamespace = reader.NamespaceURI;
 
-            List<PropertyInfo> props = new List<PropertyInfo>();
-            List<EventInfo> events = new List<EventInfo>();
+            List<PropertyInfo> props = [];
+            List<EventInfo> events = [];
             // Add the extended properties for primitive types
             if (obj.GetType().IsPrimitive || obj.GetType() == typeof(string) || obj.GetType() == typeof(decimal) ||
                 obj.GetType().IsEnum || obj.GetType() == typeof(DateTime) || obj.GetType() == typeof(TimeSpan) ||
@@ -258,7 +258,7 @@
                         continue;
 
                     //
-                    XmlQualifiedName xmlQualifiedName = new XmlQualifiedName(reader.LocalName, reader.LookupNamespace(reader.Prefix));
+                    XmlQualifiedName xmlQualifiedName = new(reader.LocalName, reader.LookupNamespace(reader.Prefix));
                     if (xmlQualifiedName.Namespace.Equals(StandardXomlKeys.Definitions_XmlNs, StringComparison.Ordinal) &&
                         !IsMarkupExtension(xmlQualifiedName) &&
                         !ExtendedPropertyInfo.IsExtendedProperty(serializationManager, props, xmlQualifiedName) &&
@@ -287,7 +287,7 @@
                     }
                     else
                     {
-                        serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerNoMemberFound, new object[] { propName, obj.GetType().FullName }), reader));
+                        serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerNoMemberFound, [propName, obj.GetType().FullName]), reader));
                     }
                 }
             }
@@ -313,14 +313,14 @@
                 return;
             }
 
-            using (ContentProperty contentProperty = new ContentProperty(serializationManager, serializer, obj))
+            using (ContentProperty contentProperty = new(serializationManager, serializer, obj))
             {
-                List<ContentInfo> contents = new List<ContentInfo>();
+                List<ContentInfo> contents = [];
                 if (!isEmptyElement)
                 {
                     reader.MoveToElement();
                     int initialDepth = reader.Depth;
-                    XmlQualifiedName extendedPropertyQualifiedName = new XmlQualifiedName(reader.LocalName, reader.LookupNamespace(reader.Prefix));
+                    XmlQualifiedName extendedPropertyQualifiedName = new(reader.LocalName, reader.LookupNamespace(reader.Prefix));
                     do
                     {
                         // Extended property should be deserialized, this is required for primitive types which have extended property as children
@@ -350,7 +350,7 @@
                         if (reader.NodeType == XmlNodeType.Element)
                         {
                             //We should only support A.B syntax for compound properties, all others are treated as content
-                            XmlQualifiedName xmlQualifiedName = new XmlQualifiedName(reader.LocalName, reader.LookupNamespace(reader.Prefix));
+                            XmlQualifiedName xmlQualifiedName = new(reader.LocalName, reader.LookupNamespace(reader.Prefix));
                             int index = reader.LocalName.IndexOf('.');
                             if (index > 0 || ExtendedPropertyInfo.IsExtendedProperty(serializationManager, xmlQualifiedName))
                             {
@@ -507,11 +507,11 @@
                 return;
             }
             //Need the SortedDictionary to keep serialization repeatable.
-            SortedDictionary<string, object> allProperties = new SortedDictionary<string, object>();
-            ArrayList complexProperties = new ArrayList();
+            SortedDictionary<string, object> allProperties = [];
+            ArrayList complexProperties = [];
 
-            List<PropertyInfo> properties = new List<PropertyInfo>();
-            List<EventInfo> events = new List<EventInfo>();
+            List<PropertyInfo> properties = [];
+            List<EventInfo> events = [];
 
             // Serialize the extended properties for primitive types also
             if (obj.GetType().IsPrimitive || obj.GetType() == typeof(string) || obj.GetType() == typeof(decimal) ||
@@ -547,7 +547,7 @@
                 else if (obj.GetType() == typeof(string))
                 {
                     string attribValue = obj as string;
-                    attribValue = attribValue.Replace('\0', ' ');
+                    attribValue = attribValue?.Replace('\0', ' ') ?? "";
                     if (!(attribValue.StartsWith("{", StringComparison.Ordinal) && attribValue.EndsWith("}", StringComparison.Ordinal)))
                         writer.WriteValue(attribValue);
                     else
@@ -606,7 +606,7 @@
                 }
             }
 
-            using (ContentProperty contentProperty = new ContentProperty(serializationManager, serializer, obj))
+            using (ContentProperty contentProperty = new(serializationManager, serializer, obj))
             {
                 foreach (object propertyObj in allProperties.Values)
                 {
@@ -616,10 +616,8 @@
 
                     try
                     {
-                        if (propertyObj is PropertyInfo)
+                        if (propertyObj is PropertyInfo property)
                         {
-                            PropertyInfo property = propertyObj as PropertyInfo;
-
                             // If the property has parameters we can not serialize it , we just move on.
                             ParameterInfo[] indexParameters = property.GetIndexParameters();
                             if (indexParameters != null && indexParameters.Length > 0)
@@ -639,7 +637,7 @@
                         while (e is TargetInvocationException && e.InnerException != null)
                             e = e.InnerException;
 
-                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerPropertyGetFailed, new object[] { propertyName, obj.GetType().FullName, e.Message })));
+                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerPropertyGetFailed, [propertyName, obj.GetType().FullName, e.Message])));
                         continue;
                     }
 
@@ -660,7 +658,7 @@
                         if (attributes.Length > 0)
                         {
                             DefaultValueAttribute defaultValueAttr = attributes[0] as DefaultValueAttribute;
-                            if (defaultValueAttr.Value == null)
+                            if (defaultValueAttr?.Value == null)
                                 propertyValue = null;
                         }
                     }
@@ -682,7 +680,7 @@
                     }
                     if (propValueSerializer == null)
                     {
-                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNotAvailableForSerialize, propertyValueType.FullName)));
+                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNotAvailableForSerialize, propertyValueType?.FullName ?? "")));
                         serializationManager.Context.Pop();
                         continue;
                     }
@@ -726,7 +724,7 @@
                     }
                     catch (Exception e)
                     {
-                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, new object[] { propertyName, obj.GetType().FullName }), e));
+                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, [propertyName, obj.GetType().FullName]), e));
                     }
                     finally
                     {
@@ -756,9 +754,8 @@
 
                     try
                     {
-                        if (propertyObj is PropertyInfo)
+                        if (propertyObj is PropertyInfo property)
                         {
-                            PropertyInfo property = propertyObj as PropertyInfo;
                             propertyName = property.Name;
                             propertyValue = property.CanRead ? property.GetValue(obj, null) : null;
                             ownerType = obj.GetType();
@@ -770,7 +767,7 @@
                         while (e is TargetInvocationException && e.InnerException != null)
                             e = e.InnerException;
 
-                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerPropertyGetFailed, propertyName, ownerType.FullName, e.Message)));
+                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerPropertyGetFailed, propertyName, ownerType?.FullName ?? "", e.Message)));
                         continue;
                     }
 
@@ -806,7 +803,7 @@
                     {
                         contents = GetMarkupExtensionFromValue(contents);
 
-                        if (!(serializationManager.GetSerializer(contents.GetType(), typeof(WorkflowMarkupSerializer)) is WorkflowMarkupSerializer propValueSerializer))
+                        if (serializationManager.GetSerializer(contents.GetType(), typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer propValueSerializer)
                         {
                             serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNotAvailableForSerialize, contents.GetType())));
                         }
@@ -836,7 +833,7 @@
                             {
                                 if (contentProperty.Property == null)
                                 {
-                                    IEnumerable enumerableContents = contents as IEnumerable;
+                                    IEnumerable enumerableContents = contents as IEnumerable ?? Array.Empty<object>();
                                     foreach (object childObj in enumerableContents)
                                     {
                                         if (childObj == null)
@@ -942,7 +939,7 @@
                     if (attributes.Length > 0)
                     {
                         DefaultValueAttribute defaultValueAttr = attributes[0] as DefaultValueAttribute;
-                        if (defaultValueAttr.Value is IConvertible && value is IConvertible && object.Equals(Convert.ChangeType(defaultValueAttr.Value, property.PropertyType, CultureInfo.InvariantCulture), Convert.ChangeType(value, property.PropertyType, CultureInfo.InvariantCulture)))
+                        if (defaultValueAttr?.Value is IConvertible && value is IConvertible && object.Equals(Convert.ChangeType(defaultValueAttr.Value, property.PropertyType, CultureInfo.InvariantCulture), Convert.ChangeType(value, property.PropertyType, CultureInfo.InvariantCulture)))
                             return false;
                     }
                 }
@@ -1001,8 +998,8 @@
             if (value == null)
                 throw new ArgumentNullException("value");
 
-            object propVal = null;
-            if (!(serializationManager.WorkflowMarkupStack[typeof(XmlReader)] is XmlReader reader))
+            object propVal;
+            if (serializationManager.WorkflowMarkupStack[typeof(XmlReader)] is not XmlReader reader)
             {
                 Debug.Assert(false, "XmlReader not available.");
                 return null;
@@ -1053,7 +1050,7 @@
                     if (propVal != null)
                     {
                         Type type = propVal as Type;
-                        if (type.IsPrimitive || type.IsEnum || type == typeof(System.String))
+                        if (type?.IsPrimitive == true || type?.IsEnum == true || type == typeof(System.String))
                             return type;
                     }
                     return value;
@@ -1068,7 +1065,7 @@
                 }
                 else
                 {
-                    throw CreateSerializationError(SR.GetString(SR.Error_SerializerPrimitivePropertyNoLogic, new object[] { "", value.Trim(), "" }), reader);
+                    throw CreateSerializationError(SR.GetString(SR.Error_SerializerPrimitivePropertyNoLogic, ["", value.Trim(), ""]), reader);
                 }
             }
             return propVal;
@@ -1101,7 +1098,7 @@
             if (childObj == null)
                 throw new ArgumentNullException("childObj");
 
-            throw new Exception(SR.GetString(SR.Error_SerializerNoChildNotion, new object[] { parentObject.GetType().FullName }));
+            throw new Exception(SR.GetString(SR.Error_SerializerNoChildNotion, [parentObject.GetType().FullName]));
         }
 
         protected virtual object CreateInstance(WorkflowMarkupSerializationManager serializationManager, Type type)
@@ -1121,7 +1118,7 @@
             if (serializationManager == null)
                 throw new ArgumentNullException("serializationManager");
 
-            List<PropertyInfo> properties = new List<PropertyInfo>();
+            List<PropertyInfo> properties = [];
 
             object[] attributes = obj.GetType().GetCustomAttributes(typeof(RuntimeNamePropertyAttribute), true);
             string name = null;
@@ -1137,7 +1134,7 @@
                 if (visibility != DesignerSerializationVisibility.Content && (!property.CanWrite || property.GetSetMethod() == null))
                 {
                     // work around for CodeObject which are ICollection needs to be serialized.
-                    if (!(obj is CodeObject) || !typeof(ICollection).IsAssignableFrom(property.PropertyType))
+                    if (obj is not CodeObject || !typeof(ICollection).IsAssignableFrom(property.PropertyType))
                         continue;
                 }
 
@@ -1147,7 +1144,7 @@
                     properties.Add(new ExtendedPropertyInfo(property, OnGetRuntimeNameValue, OnSetRuntimeNameValue, OnGetRuntimeQualifiedName));
             }
 
-            return properties.ToArray();
+            return [.. properties];
         }
 
         protected internal virtual EventInfo[] GetEvents(WorkflowMarkupSerializationManager serializationManager, object obj)
@@ -1157,7 +1154,7 @@
             if (serializationManager == null)
                 throw new ArgumentNullException("serializationManager");
 
-            List<EventInfo> events = new List<EventInfo>();
+            List<EventInfo> events = [];
             foreach (EventInfo evt in obj.GetType().GetEvents(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
             {
                 if (Helpers.GetSerializationVisibility(evt) == DesignerSerializationVisibility.Hidden)
@@ -1166,12 +1163,12 @@
                 events.Add(evt);
             }
 
-            return events.ToArray();
+            return [.. events];
         }
 
         internal virtual ExtendedPropertyInfo[] GetExtendedProperties(WorkflowMarkupSerializationManager manager, object extendee)
         {
-            return new ExtendedPropertyInfo[0];
+            return [];
         }
         private object OnGetRuntimeNameValue(ExtendedPropertyInfo extendedProperty, object extendee)
         {
@@ -1219,7 +1216,7 @@
         {
             string errorMsg = message;
             if (string.IsNullOrEmpty(errorMsg))
-                errorMsg = e.Message;
+                errorMsg = e?.Message ?? string.Empty;
 
             if (reader is IXmlLineInfo xmlLineInfo)
                 return new WorkflowMarkupSerializationException(errorMsg, xmlLineInfo.LineNumber, xmlLineInfo.LinePosition);
@@ -1261,7 +1258,7 @@
             }
             catch (Exception e)
             {
-                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerTypeNotResolvedWithInnerError, new object[] { GetClrFullName(serializationManager, xmlQualifiedName), e.Message }), e, reader));
+                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerTypeNotResolvedWithInnerError, [GetClrFullName(serializationManager, xmlQualifiedName), e.Message]), e, reader));
                 return null;
             }
             if (type == null && !xmlQualifiedName.Name.EndsWith("Extension", StringComparison.Ordinal))
@@ -1273,14 +1270,14 @@
                 }
                 catch (Exception e)
                 {
-                    serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerTypeNotResolvedWithInnerError, new object[] { GetClrFullName(serializationManager, xmlQualifiedName), e.Message }), e, reader));
+                    serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerTypeNotResolvedWithInnerError, [GetClrFullName(serializationManager, xmlQualifiedName), e.Message]), e, reader));
                     return null;
                 }
             }
 
             if (type == null)
             {
-                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerTypeNotResolved, new object[] { GetClrFullName(serializationManager, xmlQualifiedName) }), reader));
+                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerTypeNotResolved, [GetClrFullName(serializationManager, xmlQualifiedName)]), reader));
                 return null;
             }
 
@@ -1317,7 +1314,7 @@
             else
             {
                 // get the serializer
-                if (!(serializationManager.GetSerializer(type, typeof(WorkflowMarkupSerializer)) is WorkflowMarkupSerializer serializer))
+                if (serializationManager.GetSerializer(type, typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer serializer)
                 {
                     serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerNotAvailable, type.FullName), reader));
                     return null;
@@ -1355,8 +1352,7 @@
             //Deserialize compound properties
             if (isReadOnly)
             {
-                object propValue = null;
-                propValue = property.CanRead ? property.GetValue(obj, null) : null;
+                object propValue = property.CanRead ? property.GetValue(obj, null) : null;
 
                 if (propValue != null)
                     DeserializeContents(serializationManager, propValue, reader);
@@ -1408,7 +1404,7 @@
                             }
                             catch
                             {
-                                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerComplexPropertySetFailed, new object[] { propertyName, propertyName, obj.GetType().Name })));
+                                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerComplexPropertySetFailed, [propertyName, propertyName, obj.GetType().Name])));
                             }
                         }
                     }
@@ -1434,7 +1430,7 @@
 
             if (isReadOnly && !typeof(ICollection<string>).IsAssignableFrom(propertyType))
             {
-                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerPrimitivePropertyReadOnly, new object[] { property.Name, property.Name, obj.GetType().FullName }), reader));
+                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerPrimitivePropertyReadOnly, [property.Name, property.Name, obj.GetType().FullName]), reader));
                 return;
             }
 
@@ -1444,7 +1440,7 @@
         private void DeserializeSimpleMember(WorkflowMarkupSerializationManager serializationManager, Type memberType, XmlReader reader, object obj, string value)
         {
             //Get the serializer for the member type
-            if (!(serializationManager.GetSerializer(memberType, typeof(WorkflowMarkupSerializer)) is WorkflowMarkupSerializer memberSerializer))
+            if (serializationManager.GetSerializer(memberType, typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer memberSerializer)
             {
                 serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerNotAvailable, memberType.FullName), reader));
                 return;
@@ -1477,7 +1473,7 @@
                     {
                         while (e is TargetInvocationException && e.InnerException != null)
                             e = e.InnerException;
-                        serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerMemberSetFailed, new object[] { reader.LocalName, reader.Value, reader.LocalName, obj.GetType().FullName, e.Message }), e, reader));
+                        serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerMemberSetFailed, [reader.LocalName, reader.Value, reader.LocalName, obj.GetType().FullName, e.Message]), e, reader));
                     }
                 }
             }
@@ -1485,7 +1481,7 @@
             {
                 while (e is TargetInvocationException && e.InnerException != null)
                     e = e.InnerException;
-                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerMemberSetFailed, new object[] { reader.LocalName, reader.Value, reader.LocalName, obj.GetType().FullName, e.Message }), e, reader));
+                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerMemberSetFailed, [reader.LocalName, reader.Value, reader.LocalName, obj.GetType().FullName, e.Message]), e, reader));
             }
         }
         #endregion
@@ -1639,6 +1635,9 @@
                 typename = typename.Substring(typeIndex + 1);
             }
 
+            if (reader == null)
+                throw new ArgumentNullException(nameof(reader));
+
             Type type = serializationManager.GetType(new XmlQualifiedName(typename, reader.LookupNamespace(prefix)));
             if (type == null && !typename.EndsWith("Extension", StringComparison.Ordinal))
             {
@@ -1653,7 +1652,7 @@
 
             // Break apart the argument string.
             object obj = null;
-            Dictionary<string, object> namedArgs = new Dictionary<string, object>();
+            Dictionary<string, object> namedArgs = [];
             ArrayList argTokens;
             try
             {
@@ -1667,7 +1666,7 @@
             if (argTokens != null)
             {
                 // Process the positional arugments and find the correct constructor to call.
-                ArrayList positionalArgs = new ArrayList();
+                ArrayList positionalArgs = [];
                 bool firstEqual = true;
                 for (int i = 0; i < argTokens.Count; i++)
                 {
@@ -1731,12 +1730,12 @@
 
             if (namedArgs.Count > 0)
             {
-                if (!(serializationManager.GetSerializer(obj.GetType(), typeof(WorkflowMarkupSerializer)) is WorkflowMarkupSerializer serializer))
+                if (serializationManager.GetSerializer(obj.GetType(), typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer serializer)
                 {
                     serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerNotAvailable, obj.GetType().FullName), reader));
                     return obj;
                 }
-                List<PropertyInfo> properties = new List<PropertyInfo>();
+                List<PropertyInfo> properties = [];
                 try
                 {
                     properties.AddRange(serializer.GetProperties(serializationManager, obj));
@@ -1771,7 +1770,7 @@
                     }
                     else
                     {
-                        serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerPrimitivePropertyNoLogic, new object[] { argName, argName, obj.GetType().FullName }), reader));
+                        serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerPrimitivePropertyNoLogic, [argName, argName, obj.GetType().FullName]), reader));
                     }
                 }
             }
@@ -2032,7 +2031,7 @@
                                     !IsMarkupExtension(this.contentProperty.PropertyType) &&
                                     this.contentProperty.CanWrite)
                             {
-                                if (!(serializationManager.GetSerializer(this.contentProperty.PropertyType, typeof(WorkflowMarkupSerializer)) is WorkflowMarkupSerializer serializer))
+                                if (serializationManager.GetSerializer(this.contentProperty.PropertyType, typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer serializer)
                                 {
                                     serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerNotAvailable, this.contentProperty.PropertyType.FullName), reader));
                                     return;
@@ -2226,18 +2225,11 @@
             }
         }
 
-        private struct ContentInfo
+        private struct ContentInfo(object content, int lineNumber, int linePosition)
         {
-            public int LineNumber;
-            public int LinePosition;
-            public object Content;
-
-            public ContentInfo(object content, int lineNumber, int linePosition)
-            {
-                this.Content = content;
-                this.LineNumber = lineNumber;
-                this.LinePosition = linePosition;
-            }
+            public int LineNumber = lineNumber;
+            public int LinePosition = linePosition;
+            public object Content = content;
         }
         #endregion
 

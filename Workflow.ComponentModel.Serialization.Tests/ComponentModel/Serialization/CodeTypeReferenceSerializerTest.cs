@@ -243,7 +243,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
             // Assert
             Assert.NotNull(result);
-            Assert.Contains("System.String", result.BaseType);
+            Assert.Contains("System.String", result?.BaseType);
         }
 
         [Fact]
@@ -258,8 +258,8 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
             // Assert
             Assert.NotNull(result);
-            Assert.True(result.UserData.Contains(CodeTypeReferenceSerializer.QualifiedName));
-            Assert.Equal(typeof(string).AssemblyQualifiedName, result.UserData[CodeTypeReferenceSerializer.QualifiedName]);
+            Assert.True(result?.UserData.Contains(CodeTypeReferenceSerializer.QualifiedName));
+            Assert.Equal(typeof(string).AssemblyQualifiedName, result?.UserData[CodeTypeReferenceSerializer.QualifiedName]);
         }
 
         [Fact]
@@ -274,7 +274,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal("UnknownType.DoesNotExist", result.UserData[CodeTypeReferenceSerializer.QualifiedName]);
+            Assert.Equal("UnknownType.DoesNotExist", result?.UserData[CodeTypeReferenceSerializer.QualifiedName]);
         }
 
         [Fact]
@@ -289,7 +289,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
             // Assert
             Assert.NotNull(result);
-            Assert.Contains("System.String[]", result.UserData[CodeTypeReferenceSerializer.QualifiedName]!.ToString());
+            Assert.Contains("System.String[]", result?.UserData[CodeTypeReferenceSerializer.QualifiedName]!.ToString());
         }
 
         [Fact]
@@ -304,7 +304,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
             // Assert
             Assert.NotNull(result);
-            Assert.True(result.UserData.Contains(CodeTypeReferenceSerializer.QualifiedName));
+            Assert.True(result?.UserData.Contains(CodeTypeReferenceSerializer.QualifiedName));
         }
 
         #endregion
@@ -324,7 +324,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
             // Assert
             Assert.NotNull(deserialized);
-            Assert.Equal("System.Int32", deserialized.BaseType);
+            Assert.Equal("System.Int32", deserialized?.BaseType);
         }
 
         [Fact]
@@ -340,7 +340,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
             // Assert
             Assert.NotNull(deserialized);
-            Assert.Contains("List", deserialized.BaseType);
+            Assert.Contains("List", deserialized?.BaseType);
         }
 
         [Fact]
@@ -356,7 +356,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
             // Assert
             Assert.NotNull(deserialized);
-            Assert.Contains("Double[]", deserialized.UserData[CodeTypeReferenceSerializer.QualifiedName]!.ToString());
+            Assert.Contains("Double[]", deserialized?.UserData[CodeTypeReferenceSerializer.QualifiedName]!.ToString());
         }
 
         #endregion

@@ -54,7 +54,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             Assert.IsType<InstanceDescriptor>(result);
             var ctor = result.MemberInfo as ConstructorInfo;
             Assert.NotNull(ctor);
-            Assert.Equal([typeof(Type)], Array.ConvertAll(ctor.GetParameters(), p => p.ParameterType));
+            Assert.Equal([typeof(Type)], Array.ConvertAll(ctor?.GetParameters() ?? [], p => p.ParameterType));
             Assert.Single(result.Arguments);
             Assert.Equal(type, result.Arguments.OfType<Type>().First());
         }
@@ -77,7 +77,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             Assert.IsType<InstanceDescriptor>(result);
             var ctor = result.MemberInfo as ConstructorInfo;
             Assert.NotNull(ctor);
-            Assert.Equal([typeof(string)], Array.ConvertAll(ctor.GetParameters(), p => p.ParameterType));
+            Assert.Equal([typeof(string)], Array.ConvertAll(ctor?.GetParameters() ?? [], p => p.ParameterType));
             Assert.Single(result.Arguments);
             Assert.Equal(typeName, result.Arguments.OfType<string>().First());
         }

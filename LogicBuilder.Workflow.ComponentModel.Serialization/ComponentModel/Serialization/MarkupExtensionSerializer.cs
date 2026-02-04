@@ -53,8 +53,7 @@
                         int i = 0;
                         foreach (object argValue in instanceDescriptor.Arguments)
                         {
-                            if (constructorArguments == null)
-                                constructorArguments = new Dictionary<string, string>();
+                            constructorArguments ??= [];
                             // 
                             if (argValue == null)
                                 continue;
@@ -70,7 +69,7 @@
                             else if (argValue is System.Type)
                             {
                                 Type argType = argValue as Type;
-                                if (argType.Assembly != null)
+                                if (argType?.Assembly != null)
                                 {
                                     XmlQualifiedName typeQualifiedName = serializationManager.GetXmlQualifiedName(argType, out _);
                                     writer.WriteQualifiedName(XmlConvert.EncodeName(typeQualifiedName.Name), typeQualifiedName.Namespace);
@@ -91,14 +90,16 @@
                 }
             }
 
-            List<PropertyInfo> properties = new List<PropertyInfo>();
-            properties.AddRange(GetProperties(serializationManager, value));
-            properties.AddRange(serializationManager.GetExtendedProperties(value));
+            List<PropertyInfo> properties =
+            [
+                .. GetProperties(serializationManager, value),
+                .. serializationManager.GetExtendedProperties(value),
+            ];
             foreach (PropertyInfo serializableProperty in properties)
             {
                 if (Helpers.GetSerializationVisibility(serializableProperty) != DesignerSerializationVisibility.Hidden && serializableProperty.CanRead && serializableProperty.GetValue(value, null) != null)
                 {
-                    if (!(serializationManager.GetSerializer(serializableProperty.PropertyType, typeof(WorkflowMarkupSerializer)) is WorkflowMarkupSerializer propSerializer))
+                    if (serializationManager.GetSerializer(serializableProperty.PropertyType, typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer propSerializer)
                     {
                         serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNotAvailable, serializableProperty.PropertyType.FullName)));
                         continue;
@@ -142,13 +143,13 @@
                             }
                             else
                             {
-                                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, new object[] { serializableProperty.Name, value.GetType().FullName })));
+                                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, [serializableProperty.Name, value.GetType().FullName])));
                             }
                         }
                     }
                     catch
                     {
-                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, new object[] { serializableProperty.Name, value.GetType().FullName })));
+                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, [serializableProperty.Name, value.GetType().FullName])));
                         continue;
                     }
                     finally
@@ -165,9 +166,9 @@
 
         protected virtual InstanceDescriptor GetInstanceDescriptor(WorkflowMarkupSerializationManager serializationManager, object value)
         {
-            return !(value is MarkupExtension markupExtension)
+            return value is not MarkupExtension markupExtension
                 ? throw new ArgumentException(SR.GetString(SR.Error_UnexpectedArgumentType, typeof(MarkupExtension).FullName), "value")
-                : new InstanceDescriptor(markupExtension.GetType().GetConstructor(new Type[0]), null);
+                : new InstanceDescriptor(markupExtension.GetType().GetConstructor([]), null);
         }
 
         // more escaped characters can be consider here, hence a seperate fn instead of string.Replace
@@ -176,7 +177,7 @@
             if (value == null)
                 throw new ArgumentNullException("value");
 
-            StringBuilder sb = new StringBuilder(64);
+            StringBuilder sb = new(64);
             int length = value.Length;
             for (int i = 0; i < length; i++)
             {

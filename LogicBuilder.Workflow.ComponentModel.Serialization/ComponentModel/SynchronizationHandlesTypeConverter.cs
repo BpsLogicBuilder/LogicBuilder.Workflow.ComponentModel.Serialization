@@ -58,9 +58,9 @@ namespace LogicBuilder.Workflow.ComponentModel
 
         internal static ICollection<String> UnStringify(string stringifiedValue)
         {
-            ICollection<String> synchronizationHandles = new List<String>();
-            stringifiedValue = stringifiedValue.Replace("\\,", ">");
-            foreach (string handle in stringifiedValue.Split(new char[] { ',', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            ICollection<String> synchronizationHandles = [];
+            stringifiedValue = stringifiedValue?.Replace("\\,", ">") ?? "";
+            foreach (string handle in stringifiedValue.Split([',', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
             {
                 string realHandle = handle.Trim().Replace('>', ',');
                 if (realHandle != string.Empty && !synchronizationHandles.Contains(realHandle))

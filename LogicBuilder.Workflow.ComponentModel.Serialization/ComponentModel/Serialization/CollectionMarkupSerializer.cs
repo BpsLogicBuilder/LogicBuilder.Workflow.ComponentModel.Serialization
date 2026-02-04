@@ -18,16 +18,14 @@
             if (!IsValidCollectionType(obj.GetType()))
                 throw new Exception(SR.GetString(SR.Error_SerializerTypeRequirement, obj.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
 
-            IEnumerable enumerable = obj as IEnumerable;
-            ArrayList arrayList = new ArrayList();
-            foreach (object containedObj in enumerable)
-                arrayList.Add(containedObj);
+            IEnumerable enumerable = obj as IEnumerable ?? Enumerable.Empty<object>();
+            ArrayList arrayList = [.. enumerable];
             return arrayList;
         }
 
         protected internal override PropertyInfo[] GetProperties(WorkflowMarkupSerializationManager serializationManager, object obj)
         {
-            return new PropertyInfo[] { };
+            return [];
         }
 
         protected internal override bool ShouldSerializeValue(WorkflowMarkupSerializationManager serializationManager, object value)
@@ -52,7 +50,7 @@
                 throw new Exception(SR.GetString(SR.Error_SerializerTypeRequirement, obj.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
 
             if (obj is ICollection) /*Updating from collection == null - appears to be a bug e.g. List of T passes IsValidCollectionType and implements System.Collections.ICollection.*/
-                obj.GetType().InvokeMember("Clear", BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance, null, obj, new object[] { }, CultureInfo.InvariantCulture);
+                obj.GetType().InvokeMember("Clear", BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance, null, obj, [], CultureInfo.InvariantCulture);
         }
 
         protected internal override void AddChild(WorkflowMarkupSerializationManager serializationManager, object parentObj, object childObj)
@@ -63,7 +61,7 @@
             if (!IsValidCollectionType(parentObj.GetType()))
                 throw new Exception(SR.GetString(SR.Error_SerializerTypeRequirement, parentObj.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
 
-            parentObj.GetType().InvokeMember("Add", BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance, null, parentObj, new object[] { childObj }, CultureInfo.InvariantCulture);
+            parentObj.GetType().InvokeMember("Add", BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance, null, parentObj, [childObj], CultureInfo.InvariantCulture);
         }
 
         internal static bool IsValidCollectionType(Type collectionType)
