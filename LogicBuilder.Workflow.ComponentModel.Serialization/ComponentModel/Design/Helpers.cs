@@ -10,10 +10,9 @@ namespace LogicBuilder.Workflow.ComponentModel.Design
 {
     internal static class Helpers
     {
-        [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         internal static XmlWriter CreateXmlWriter(object output)
         {
-            XmlWriterSettings settings = new XmlWriterSettings
+            XmlWriterSettings settings = new()
             {
                 Indent = true,
                 IndentChars = ("\t"),
@@ -32,7 +31,6 @@ namespace LogicBuilder.Workflow.ComponentModel.Design
             }
         }
 
-        [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         internal static DesignerSerializationVisibility GetSerializationVisibility(MemberInfo memberInfo)
         {
 

@@ -168,7 +168,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel
             string input = "handle1, handle2, handle3";
 
             // Act
-            var result = _converter.ConvertFrom(null, CultureInfo.InvariantCulture, input) as ICollection<string>;
+            var result = _converter.ConvertFrom(null, CultureInfo.InvariantCulture, input) as ICollection<string> ?? [];
 
             // Assert
             Assert.NotNull(result);
