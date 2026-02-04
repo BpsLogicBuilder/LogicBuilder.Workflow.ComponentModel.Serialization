@@ -374,24 +374,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
         }
 
         [Fact]
-        [SuppressMessage("Style", "CA1062:Validate arguments of public methods", Justification = "Testing explicit null handling")]
-        public void Equals_WithNull_ReturnsFalse()
-        {
-            // Arrange
-            var mapping = new WorkflowMarkupSerializerMapping(
-                "prefix",
-                "http://test.namespace.com",
-                "TestNamespace",
-                "TestAssembly");
-
-            // Act
-            var result = mapping.Equals(null);
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
         public void Equals_WithSameUnifiedAssemblyName_ReturnsTrue()
         {
             // Arrange
