@@ -1401,16 +1401,14 @@
 
                             if (propValue != null && propValue.GetType() == typeof(string) && ((string)propValue).StartsWith("{}", StringComparison.Ordinal))
                                 propValue = ((string)propValue).Substring(2);
-                            if (property != null)
+
+                            try
                             {
-                                try
-                                {
-                                    property.SetValue(obj, propValue, null);
-                                }
-                                catch
-                                {
-                                    serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerComplexPropertySetFailed, new object[] { propertyName, propertyName, obj.GetType().Name })));
-                                }
+                                property.SetValue(obj, propValue, null);
+                            }
+                            catch
+                            {
+                                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerComplexPropertySetFailed, new object[] { propertyName, propertyName, obj.GetType().Name })));
                             }
                         }
                     }
