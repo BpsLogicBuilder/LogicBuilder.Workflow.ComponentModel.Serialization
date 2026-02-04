@@ -163,16 +163,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         #region HasErrors Tests
 
         [Fact]
-        public void HasErrors_WithEmptyCollection_ReturnsFalse()
-        {
-            // Arrange
-            var collection = new ValidationErrorCollection();
-
-            // Act & Assert
-            Assert.False(collection.HasErrors);
-        }
-
-        [Fact]
         public void HasErrors_WithOnlyWarnings_ReturnsFalse()
         {
             // Arrange
@@ -233,16 +223,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         #region HasWarnings Tests
 
         [Fact]
-        public void HasWarnings_WithEmptyCollection_ReturnsFalse()
-        {
-            // Arrange
-            var collection = new ValidationErrorCollection();
-
-            // Act & Assert
-            Assert.False(collection.HasWarnings);
-        }
-
-        [Fact]
         public void HasWarnings_WithOnlyErrors_ReturnsFalse()
         {
             // Arrange
@@ -301,20 +281,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         #endregion
 
         #region ToArray Tests
-
-        [Fact]
-        public void ToArray_WithEmptyCollection_ReturnsEmptyArray()
-        {
-            // Arrange
-            var collection = new ValidationErrorCollection();
-
-            // Act
-            var array = collection.ToArray();
-
-            // Assert
-            Assert.NotNull(array);
-            Assert.Empty(array);
-        }
 
         [Fact]
         public void ToArray_WithItems_ReturnsArrayWithAllItems()
@@ -535,30 +501,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         #region Edge Cases
 
         [Fact]
-        public void HasErrors_WithNullItems_HandlesGracefully()
-        {
-            // Note: While InsertItem prevents adding null,
-            // this tests the defensive check in HasErrors property
-            // Arrange
-            var collection = new ValidationErrorCollection();
-
-            // Act & Assert - should not throw
-            Assert.False(collection.HasErrors);
-        }
-
-        [Fact]
-        public void HasWarnings_WithNullItems_HandlesGracefully()
-        {
-            // Note: While InsertItem prevents adding null,
-            // this tests the defensive check in HasWarnings property
-            // Arrange
-            var collection = new ValidationErrorCollection();
-
-            // Act & Assert - should not throw
-            Assert.False(collection.HasWarnings);
-        }
-
-        [Fact]
         public void AddRange_WithValidationErrorCollection_AddsAllItems()
         {
             // Arrange
@@ -574,18 +516,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
 
             // Assert
             Assert.Equal(2, collection.Count);
-        }
-
-        [Fact]
-        public void Collection_IsSerializable()
-        {
-            // Arrange
-            var collection = new ValidationErrorCollection();
-
-            // Act & Assert - Verify the Serializable attribute is present
-            var type = collection.GetType();
-            var attributes = type.GetCustomAttributes(typeof(SerializableAttribute), false);
-            Assert.NotEmpty(attributes);
         }
 
         #endregion

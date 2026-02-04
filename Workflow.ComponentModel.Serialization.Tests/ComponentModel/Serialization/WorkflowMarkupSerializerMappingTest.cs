@@ -2,15 +2,10 @@ using LogicBuilder.ComponentModel.Design.Serialization;
 using LogicBuilder.Workflow.ComponentModel.Serialization;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Design.Serialization;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Xml;
-using Xunit;
 
-[assembly: XmlnsDefinition("http://test.namespace.com", "Workflow.ComponentModel.Serialization.Tests.TestNamespace")]
-[assembly: XmlnsPrefix("http://test.namespace.com", "test")]
 namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 {
     public class WorkflowMarkupSerializerMappingTest
