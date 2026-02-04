@@ -16,25 +16,21 @@ namespace LogicBuilder.Workflow.ComponentModel.Design
 
         protected internal override PropertyInfo[] GetProperties(WorkflowMarkupSerializationManager serializationManager, object obj)
         {
-            List<PropertyInfo> properties = new List<PropertyInfo>();
+            List<PropertyInfo> properties = [];
             if (obj is Point)
             {
                 properties.Add(typeof(Point).GetProperty("X"));
                 properties.Add(typeof(Point).GetProperty("Y"));
             }
-            return properties.ToArray();
+            return [.. properties];
         }
 
         protected internal override string SerializeToString(WorkflowMarkupSerializationManager serializationManager, object value)
         {
-            string convertedValue = String.Empty;
-
             TypeConverter converter = TypeDescriptor.GetConverter(value);
-            if (converter != null && converter.CanConvertTo(typeof(string)))
-                convertedValue = converter.ConvertTo(value, typeof(string)) as string;
-            else
-                convertedValue = base.SerializeToString(serializationManager, value);
-            return convertedValue;
+            return converter != null && converter.CanConvertTo(typeof(string))
+                ? converter.ConvertTo(value, typeof(string)) as string
+                : base.SerializeToString(serializationManager, value);
         }
 
         protected internal override object DeserializeFromString(WorkflowMarkupSerializationManager serializationManager, Type propertyType, string value)
@@ -45,10 +41,9 @@ namespace LogicBuilder.Workflow.ComponentModel.Design
             if (!String.IsNullOrWhiteSpace(pointValue))
             {
                 TypeConverter converter = TypeDescriptor.GetConverter(typeof(Point));
-                if (converter != null && converter.CanConvertFrom(typeof(string)) && !IsValidCompactAttributeFormat(pointValue))
-                    point = converter.ConvertFrom(value);
-                else
-                    point = base.SerializeToString(serializationManager, value);
+                point = converter != null && converter.CanConvertFrom(typeof(string)) && !IsValidCompactAttributeFormat(pointValue)
+                    ? converter.ConvertFrom(value)
+                    : base.SerializeToString(serializationManager, value);
             }
 
             return point;

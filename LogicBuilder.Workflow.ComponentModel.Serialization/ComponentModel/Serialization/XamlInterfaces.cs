@@ -174,10 +174,9 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
                     return type;
 
                 // To Support types whose assembly is not available, we need to still resolve the clr namespace
-                if (manager.XmlNamespaceBasedMappings.TryGetValue(reader.LookupNamespace(prefix), out List<WorkflowMarkupSerializerMapping> xmlnsMappings) && xmlnsMappings != null && xmlnsMappings.Count > 0)
-                    return xmlnsMappings[0].ClrNamespace + "." + typename;
-                else
-                    return typename;
+                return manager.XmlNamespaceBasedMappings.TryGetValue(reader.LookupNamespace(prefix), out List<WorkflowMarkupSerializerMapping> xmlnsMappings) && xmlnsMappings != null && xmlnsMappings.Count > 0
+                    ? xmlnsMappings[0].ClrNamespace + "." + typename
+                    : typename;
             }
             type = manager.GetType(new XmlQualifiedName(typename, reader.LookupNamespace(string.Empty)));
 

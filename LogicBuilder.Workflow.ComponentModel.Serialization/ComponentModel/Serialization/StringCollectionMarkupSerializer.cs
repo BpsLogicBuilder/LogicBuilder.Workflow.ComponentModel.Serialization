@@ -45,10 +45,9 @@
             // ICollection<string> or its derivative, special case! (A synchronization
             // handle cannot begin with a * because it won't be a language independent
             // identifier :) )
-            if (IsValidCompactAttributeFormat(value))
-                return DeserializeFromCompactFormat(serializationManager, serializationManager.WorkflowMarkupStack[typeof(XmlReader)] as XmlReader, value);
-            else
-                return SynchronizationHandlesTypeConverter.UnStringify(value);
+            return IsValidCompactAttributeFormat(value)
+                ? DeserializeFromCompactFormat(serializationManager, serializationManager.WorkflowMarkupStack[typeof(XmlReader)] as XmlReader, value)
+                : SynchronizationHandlesTypeConverter.UnStringify(value);
         }
     }
 }
