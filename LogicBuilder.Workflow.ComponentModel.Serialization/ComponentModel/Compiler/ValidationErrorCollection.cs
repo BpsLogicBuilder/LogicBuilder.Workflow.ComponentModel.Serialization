@@ -54,7 +54,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Compiler
         {
             get
             {
-                return this.OfType<ValidationError>().Any(e => !(e?.IsWarning == true));
+                return this.OfType<ValidationError>().Any(e => e?.IsWarning != true);
             }
         }
 
