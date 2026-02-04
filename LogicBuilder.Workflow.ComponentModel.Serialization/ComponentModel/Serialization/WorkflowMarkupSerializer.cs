@@ -510,8 +510,8 @@
             SortedDictionary<string, object> allProperties = [];
             ArrayList complexProperties = [];
 
-            List<PropertyInfo> properties = [];
-            List<EventInfo> events = [];
+            List<PropertyInfo> properties = new();
+            List<EventInfo> events = new();
 
             // Serialize the extended properties for primitive types also
             if (obj.GetType().IsPrimitive || obj.GetType() == typeof(string) || obj.GetType() == typeof(decimal) ||
@@ -557,9 +557,9 @@
                 {
                     writer.WriteValue(obj);
                 }
-                // For Key properties, we don;t want to get the extended properties
+                // For Key properties, we don't want to get the extended properties
                 if (!dictionaryKey)
-                    properties.AddRange(serializationManager.GetExtendedProperties(obj));
+                    properties?.AddRange(serializationManager.GetExtendedProperties(obj));
             }
             else
             {
@@ -573,11 +573,11 @@
 
                 try
                 {
-                    properties.AddRange(serializer.GetProperties(serializationManager, obj));
+                    properties?.AddRange(serializer.GetProperties(serializationManager, obj));
                     // For Key properties, we don;t want to get the extended properties
                     if (!dictionaryKey)
                         properties.AddRange(serializationManager.GetExtendedProperties(obj));
-                    events.AddRange(serializer.GetEvents(serializationManager, obj));
+                    events?.AddRange(serializer.GetEvents(serializationManager, obj));
                 }
                 catch (Exception e)
                 {

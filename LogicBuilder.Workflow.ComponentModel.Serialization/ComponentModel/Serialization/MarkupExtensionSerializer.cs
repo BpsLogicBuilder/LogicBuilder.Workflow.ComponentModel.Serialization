@@ -76,7 +76,7 @@
                                 }
                                 else
                                 {
-                                    writer.WriteString(argType.FullName);
+                                    writer.WriteString(argType?.FullName ?? string.Empty);
                                 }
                             }
                             else
