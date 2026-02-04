@@ -52,6 +52,7 @@ namespace LogicBuilder.Workflow.Tests
         public void CreateGuid_ReturnsValidGuid_WhenGuidStringHasParentheses()
         {
             // Arrange
+            System.Diagnostics.Trace.Listeners.Clear();
             string guidString = "(12345678-1234-1234-1234-123456789abc)";
             Guid expected = new(guidString);
 
@@ -66,6 +67,7 @@ namespace LogicBuilder.Workflow.Tests
         public void CreateGuid_ThrowsArgumentNullException_WhenGuidStringIsNull()
         {
             // Arrange
+            System.Diagnostics.Trace.Listeners.Clear();
             string guidString = null!;
 
             // Act & Assert
@@ -76,6 +78,7 @@ namespace LogicBuilder.Workflow.Tests
         public void CreateGuid_ThrowsFormatException_WhenGuidStringIsInvalid()
         {
             // Arrange
+            System.Diagnostics.Trace.Listeners.Clear();
             string guidString = "invalid-guid-string";
 
             // Act & Assert
@@ -96,6 +99,7 @@ namespace LogicBuilder.Workflow.Tests
         public void CreateGuid_ThrowsFormatException_WhenGuidStringIsTooShort()
         {
             // Arrange
+            System.Diagnostics.Trace.Listeners.Clear();
             string guidString = "12345678";
 
             // Act & Assert

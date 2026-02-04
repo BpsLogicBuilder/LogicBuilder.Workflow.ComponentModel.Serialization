@@ -109,9 +109,7 @@ internal sealed class SR
         if (sys == null)
             return null;
         string res = sys.resources.GetString(name, culture);
-#if !UNITTESTS && DEBUG
         System.Diagnostics.Debug.Assert(res != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", new object[] { name }));
-#endif
         if (args != null && args.Length > 0)
         {
             return string.Format(CultureInfo.CurrentCulture, res, args);
@@ -133,9 +131,7 @@ internal sealed class SR
         if (sys == null)
             return null;
         string res = sys.resources.GetString(name, culture);
-#if !UNITTESTS && DEBUG
         System.Diagnostics.Debug.Assert(res != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", new object[] { name }));
-#endif
         return res;
     }
 

@@ -359,7 +359,7 @@
                                 //DependencyProperty dependencyProperty = ResolveDependencyProperty(serializationManager, reader, obj, reader.LocalName);
                                 if (property == null)
                                     serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_InvalidElementFoundForType, reader.LocalName, obj.GetType().FullName), reader));
-                                else if (property != null)
+                                else
                                 {
                                     //Deserialize the compound property
                                     serializationManager.Context.Push(property);
@@ -1004,9 +1004,7 @@
             object propVal = null;
             if (!(serializationManager.WorkflowMarkupStack[typeof(XmlReader)] is XmlReader reader))
             {
-#if !UNITTESTS && DEBUG
                 Debug.Assert(false, "XmlReader not available.");
-#endif
                 return null;
             }
             if (IsValidCompactAttributeFormat(value))
@@ -1358,8 +1356,7 @@
             if (isReadOnly)
             {
                 object propValue = null;
-                if (property != null)
-                    propValue = property.CanRead ? property.GetValue(obj, null) : null;
+                propValue = property.CanRead ? property.GetValue(obj, null) : null;
 
                 if (propValue != null)
                     DeserializeContents(serializationManager, propValue, reader);

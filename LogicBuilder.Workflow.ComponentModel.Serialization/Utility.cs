@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 [assembly: CLSCompliant(true)]
@@ -23,9 +22,7 @@ namespace LogicBuilder.Workflow
             {
                 if (!success)
                 {
-#if !UNITTESTS && DEBUG
                     System.Diagnostics.Debug.Assert(false, "Creation of the Guid failed.");
-#endif
                 }
             }
 

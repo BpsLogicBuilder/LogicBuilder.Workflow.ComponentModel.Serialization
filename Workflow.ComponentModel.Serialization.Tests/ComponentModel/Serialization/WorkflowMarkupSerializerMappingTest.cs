@@ -2,6 +2,7 @@ using LogicBuilder.ComponentModel.Design.Serialization;
 using LogicBuilder.Workflow.ComponentModel.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Xml;
@@ -373,6 +374,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
         }
 
         [Fact]
+        [SuppressMessage("Style", "CA1062:Validate arguments of public methods", Justification = "Testing explicit null handling")]
         public void Equals_WithNull_ReturnsFalse()
         {
             // Arrange

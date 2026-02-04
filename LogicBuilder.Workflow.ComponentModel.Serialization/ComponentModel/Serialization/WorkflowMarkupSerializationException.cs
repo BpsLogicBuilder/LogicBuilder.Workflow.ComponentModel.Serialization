@@ -49,17 +49,6 @@
             this.columnNumber = info.GetInt32("columnNumber");
         }
 
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            if (info == null)
-                throw new ArgumentNullException("info");
-
-            base.GetObjectData(info, context);
-
-            info.AddValue("lineNumber", this.lineNumber, typeof(int));
-            info.AddValue("columnNumber", this.columnNumber, typeof(int));
-        }
-
         public int LineNumber
         {
             get
