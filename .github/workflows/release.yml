@@ -5,7 +5,7 @@ on:
     types: [published]
 
 permissions:
-    contents: read
+    contents: write
     packages: write
     # id-token: write
 
@@ -75,7 +75,12 @@ jobs:
       - name: Build project
         run: dotnet build --no-restore --configuration Release
 
+      - name: Make script executable
+        run: chmod +x ./Release_Pack_Push.ps1
+        shell: bash
+
       - name: Publish Packages
+        shell: pwsh
         run: ./Release_Pack_Push.ps1
         env:
           REPO: ${{ github.repository }}

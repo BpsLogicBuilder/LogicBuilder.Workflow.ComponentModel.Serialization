@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 permissions:
-    contents: read
+    contents: write
     packages: write
 
 env:
@@ -70,7 +70,12 @@ jobs:
       - name: Build project
         run: dotnet build --no-restore --configuration Release
 
+      - name: Make script executable
+        run: chmod +x ./CI_Pack_Push.ps1
+        shell: bash
+
       - name: Publish to GitHub Packages
+        shell: pwsh
         run: ./CI_Pack_Push.ps1
         env:
           GITHUB_NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
