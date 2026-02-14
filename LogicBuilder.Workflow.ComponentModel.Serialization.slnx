@@ -3,8 +3,6 @@
     <File Path=".github/workflows/check-for-ab-number.yml" />
     <File Path=".github/workflows/ci.yml" />
     <File Path=".github/workflows/release.yml" />
-    <File Path="CI_Pack_Push.ps1" />
-    <File Path="Release_Pack_Push.ps1" />
   </Folder>
   <Project Path="LogicBuilder.Workflow.ComponentModel.Serialization/LogicBuilder.Workflow.ComponentModel.Serialization.csproj" />
   <Project Path="Workflow.ComponentModel.Serialization.Tests/Workflow.ComponentModel.Serialization.Tests.csproj" Id="1b5e3f1c-42ee-4114-af6f-b3044bfba6c3" />
