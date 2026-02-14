@@ -46,6 +46,8 @@ jobs:
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   publish-packages:
     name: Publish Package to GitHub Packages and NuGet.org
@@ -79,16 +81,10 @@ jobs:
       - name: Build project
         run: dotnet build --no-restore --configuration Release
 
-      - name: Make script executable
-        run: chmod +x ./Release_Pack_Push.ps1
-        shell: bash
-
       - name: Publish Packages
-        shell: pwsh
-        run: ./Release_Pack_Push.ps1
+        run: |
+          dotnet pack --configuration Release --no-build -o ./nupkg
+          dotnet nuget push ./nupkg/*.nupkg --skip-duplicate --api-key ${{ secrets.GITHUB_TOKEN }}
+          dotnet nuget push ./nupkg/*.nupkg --skip-duplicate --source ${{ env.NUGET_URL }} --api-key ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
         env:
-          REPO: ${{ github.repository }}
-          REPO_OWNER: ${{ github.repository_owner }}
           NUGET_URL: 'https://api.nuget.org/v3/index.json'
-          GITHUB_NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NUGET_API_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}

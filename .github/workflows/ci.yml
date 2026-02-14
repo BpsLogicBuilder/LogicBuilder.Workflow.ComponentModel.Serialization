@@ -47,6 +47,8 @@ jobs:
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   publish-packages:
     name: Publish to GitHub Packages
@@ -74,14 +76,7 @@ jobs:
       - name: Build project
         run: dotnet build --no-restore --configuration Release
 
-      - name: Make script executable
-        run: chmod +x ./CI_Pack_Push.ps1
-        shell: bash
-
       - name: Publish to GitHub Packages
-        shell: pwsh
-        run: ./CI_Pack_Push.ps1
-        env:
-          GITHUB_NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          REPO_OWNER: ${{ github.repository_owner }}
+        run: |
+          dotnet pack --configuration Release --no-build -o ./nupkg
+          dotnet nuget push ./nupkg/*.nupkg --skip-duplicate --api-key ${{ secrets.GITHUB_TOKEN }}
