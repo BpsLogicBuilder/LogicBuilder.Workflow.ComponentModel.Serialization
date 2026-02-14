@@ -1,5 +1,10 @@
 # LogicBuilder.Workflow.ComponentModel.Serialization
 
+[![Build Status](https://github.com/BpsLogicBuilder/LogicBuilder.Workflow.ComponentModel.Serialization/actions/workflows/ci.yml/badge.svg)](https://github.com/BpsLogicBuilder/LogicBuilder.Workflow.ComponentModel.Serialization/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/BpsLogicBuilder/LogicBuilder.Workflow.ComponentModel.Serialization/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/BpsLogicBuilder/LogicBuilder.Workflow.ComponentModel.Serialization/actions/workflows/github-code-scanning/codeql)
+[![codecov](https://codecov.io/gh/BpsLogicBuilder/LogicBuilder.Workflow.ComponentModel.Serialization/graph/badge.svg?token=CTUXSQYTCV)](https://codecov.io/gh/BpsLogicBuilder/LogicBuilder.Workflow.ComponentModel.Serialization)
+[![NuGet](https://img.shields.io/nuget/v/LogicBuilder.Workflow.ComponentModel.Serialization.svg)](https://www.nuget.org/packages/LogicBuilder.Workflow.ComponentModel.Serialization)
+
 ## Integration with LogicBuilder.Rules
 
 This library serves as the serialization layer for the LogicBuilder.Rules rulesets, enabling:
@@ -31,4 +36,4 @@ Contributions are welcome.
 
 ## Related Projects
 
-- [LogicBuilder.Rules](https://github.com/BpsLogicBuilder/LogicBuilder.Rules) - The workflow rules engine that uses this serialization library
+- [LogicBuilder.Workflow.Activities.Rules](https://github.com/BpsLogicBuilder/LogicBuilder.Workflow.Activities.Rules) - The workflow rules engine that uses this serialization library
