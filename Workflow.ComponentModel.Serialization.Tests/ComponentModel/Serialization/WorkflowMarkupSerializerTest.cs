@@ -885,57 +885,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
         #endregion
 
-        #region CreateInstance Tests
-
-        //[Fact]
-        //public void CreateInstance_WithNullSerializationManager_ThrowsArgumentNullException()
-        //{
-        //    // Arrange
-        //    var serializer = new TestCustomSerializer();
-        //    var type = typeof(TestSimpleObject);
-
-        //    // Act & Assert
-        //    Assert.Throws<ArgumentNullException>(() => 
-        //        serializer.CreateInstance(null, type));
-        //}
-
-        //[Fact]
-        //public void CreateInstance_WithNullType_ThrowsArgumentNullException()
-        //{
-        //    // Arrange
-        //    var serializer = new TestCustomSerializer();
-        //    var manager = new DesignerSerializationManager();
-
-        //    // Act & Assert
-        //    using (manager.CreateSession())
-        //    {
-        //        Assert.Throws<ArgumentNullException>(() => 
-        //            serializer.CreateInstance(new WorkflowMarkupSerializationManager(manager), null));
-        //    }
-        //}
-
-        //[Fact]
-        //public void CreateInstance_CreatesInstance()
-        //{
-        //    // Arrange
-        //    var serializer = new TestCustomSerializer();
-        //    var manager = new DesignerSerializationManager();
-        //    var type = typeof(TestSimpleObject);
-
-        //    // Act
-        //    object result;
-        //    using (manager.CreateSession())
-        //    {
-        //        result = serializer.CreateInstance(new WorkflowMarkupSerializationManager(manager), type);
-        //    }
-
-        //    // Assert
-        //    Assert.NotNull(result);
-        //    Assert.IsType<TestSimpleObject>(result);
-        //}
-
-        #endregion
-
         #region GetProperties Tests
 
         [Fact]
