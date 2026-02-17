@@ -1,18 +1,14 @@
 using LogicBuilder.ComponentModel.Design.Serialization;
 using LogicBuilder.Workflow.ComponentModel.Design;
 using LogicBuilder.Workflow.ComponentModel.Serialization;
-using Newtonsoft.Json.Linq;
 using System;
 using System.CodeDom;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.ComponentModel.Design.Serialization;
 using System.Drawing;
-using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Xml;
-using Xunit;
 
 namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 {
@@ -132,115 +128,367 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             #endregion
         }
 
-        //[Fact]
-        //public void SerializeToString_SerializesSimpleMarkupExtension()
-        //{
-        //    // Arrange
-        //    var markupExtension = new TestMarkupExtension();
-        //    var sb = new StringBuilder();
-        //    var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
-        //    var writer = XmlWriter.Create(sb, settings);
+        [Fact]
+        public void SerializeToString_SerializesSimpleMarkupExtension()
+        {
+            // Arrange
+            var markupExtension = new TestMarkupExtension();
+            var sb = new StringBuilder();
+            var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
+            var writer = XmlWriter.Create(sb, settings);
 
+            _serializationManager.WorkflowMarkupStack.Push(writer);
 
-        //    _serializationManager.WorkflowMarkupStack.Push(writer);
+            try
+            {
+                writer.WriteStartElement("", "Root", "http://schemas.microsoft.com/winfx/2006/xaml");
+                writer.WriteAttributeString("xmlns", "ns0", null, "clr-namespace:LogicBuilder.Workflow.Tests.ComponentModel.Serialization;Assembly=LogicBuilder.Workflow.ComponentModel.Serialization.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=646893bec0268535");
 
-        //    try
-        //    {
-        //        writer.WriteStartElement("Root");
+                using (((DesignerSerializationManager)_serializationManager.SerializationManager).CreateSession())
+                {
+                    // Act
+                    _serializer.SerializeToString(_serializationManager, markupExtension);
+                }
 
-                
-        //        using (((DesignerSerializationManager)_serializationManager.SerializationManager).CreateSession())
-        //        {
-        //            // Act
-        //            _serializer.SerializeToString(_serializationManager, markupExtension);
-        //        }
+                writer.WriteEndElement();
+                writer.Flush();
 
-        //        writer.WriteEndElement();
-        //        writer.Flush();
+                // Assert
+                var result = sb.ToString();
+                Assert.Contains("{", result);
+                Assert.Contains("}", result);
+            }
+            finally
+            {
+                _serializationManager.WorkflowMarkupStack.Pop();
+                writer.Dispose();
+            }
+        }
 
-        //        // Assert
-        //        var result = sb.ToString();
-        //        Assert.Contains("{", result);
-        //        Assert.Contains("}", result);
-        //    }
-        //    finally
-        //    {
-        //        _serializationManager.WorkflowMarkupStack.Pop();
-        //        writer.Dispose();
-        //    }
-        //}
+        [Fact]
+        public void SerializeToString_SerializesMarkupExtensionWithProperties()
+        {
+            // Arrange
+            var designerSerializationManager = new DesignerSerializationManager();
+            var manager = new WorkflowMarkupSerializationManager(designerSerializationManager);
+            
+            var markupExtension = new TestMarkupExtensionWithProperties
+            {
+                StringProperty = "test",
+                IntProperty = 42
+            };
+            var sb = new StringBuilder();
+            var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
+            var writer = XmlWriter.Create(sb, settings);
+            manager.WorkflowMarkupStack.Push(writer);
 
-        //[Fact]
-        //public void SerializeToString_SerializesMarkupExtensionWithProperties()
-        //{
-        //    // Arrange
-        //    var markupExtension = new TestMarkupExtensionWithProperties
-        //    {
-        //        StringProperty = "test",
-        //        IntProperty = 42
-        //    };
-        //    var sb = new StringBuilder();
-        //    var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
-        //    var writer = XmlWriter.Create(sb, settings);
-        //    _serializationManager.WorkflowMarkupStack.Push(writer);
+            try
+            {
+                writer.WriteStartElement("", "Root", "http://schemas.microsoft.com/winfx/2006/xaml");
+                writer.WriteAttributeString("xmlns", "ns0", null, "clr-namespace:LogicBuilder.Workflow.Tests.ComponentModel.Serialization;Assembly=LogicBuilder.Workflow.ComponentModel.Serialization.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=646893bec0268535");
 
-        //    try
-        //    {
-        //        writer.WriteStartElement("Root");
+                using (designerSerializationManager.CreateSession())
+                {
+                    // Act
+                    _serializer.SerializeToString(manager, markupExtension);
+                }
 
-        //        // Act
-        //        _serializer.SerializeToString(_serializationManager, markupExtension);
+                writer.WriteEndElement();
+                writer.Flush();
 
-        //        writer.WriteEndElement();
-        //        writer.Flush();
+                // Assert
+                var result = sb.ToString();
+                Assert.Contains("{", result);
+                Assert.Contains("}", result);
+                Assert.Contains("StringProperty", result);
+            }
+            finally
+            {
+                manager.WorkflowMarkupStack.Pop();
+                writer.Dispose();
+            }
+        }
 
-        //        // Assert
-        //        var result = sb.ToString();
-        //        Assert.Contains("{", result);
-        //        Assert.Contains("}", result);
-        //    }
-        //    finally
-        //    {
-        //        _serializationManager.WorkflowMarkupStack.Pop();
-        //        writer.Dispose();
-        //    }
-        //}
+        [Fact]
+        public void SerializeToString_EscapesSpecialCharactersInPropertyValues()
+        {
+            // Arrange
+            var designerSerializationManager = new DesignerSerializationManager();
+            var manager = new WorkflowMarkupSerializationManager(designerSerializationManager);
 
-        //[Fact]
-        //public void SerializeToString_EscapesSpecialCharacters()
-        //{
-        //    // Arrange
-        //    var markupExtension = new TestMarkupExtensionWithProperties
-        //    {
-        //        StringProperty = "test=value,with{special}chars"
-        //    };
-        //    var sb = new StringBuilder();
-        //    var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
-        //    var writer = XmlWriter.Create(sb, settings);
-        //    _serializationManager.WorkflowMarkupStack.Push(writer);
+            var markupExtension = new TestMarkupExtensionWithProperties
+            {
+                StringProperty = "test=value,with{special}chars"
+            };
+            var sb = new StringBuilder();
+            var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
+            var writer = XmlWriter.Create(sb, settings);
+            manager.WorkflowMarkupStack.Push(writer);
 
-        //    try
-        //    {
-        //        _serializer.Serialize(writer, markupExtension);
-        //        writer.WriteStartElement("Root");
+            try
+            {
+                writer.WriteStartElement("", "Root", "http://schemas.microsoft.com/winfx/2006/xaml");
+                writer.WriteAttributeString("xmlns", "ns0", null, "clr-namespace:LogicBuilder.Workflow.Tests.ComponentModel.Serialization;Assembly=LogicBuilder.Workflow.ComponentModel.Serialization.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=646893bec0268535");
 
-        //        // Act
-        //        //MarkupExtensionSerializer markupExtensionSerializer = new MarkupExtensionSerializer();
-        //        _serializer.SerializeToString(_serializationManager, markupExtension);
+                using (designerSerializationManager.CreateSession())
+                {
+                    // Act
+                    _serializer.SerializeToString(manager, markupExtension);
+                }
 
-        //        writer.WriteEndElement();
-        //        writer.Flush();
+                writer.WriteEndElement();
+                writer.Flush();
 
-        //        // Assert
-        //        var result = sb.ToString();
-        //        Assert.Contains("\\", result); // Should contain escape characters
-        //    }
-        //    finally
-        //    {
-        //        _serializationManager.WorkflowMarkupStack.Pop();
-        //        writer.Dispose();
-        //    }
-        //}
+                // Assert
+                var result = sb.ToString();
+                Assert.Contains("\\", result); // Should contain escape characters
+            }
+            finally
+            {
+                manager.WorkflowMarkupStack.Pop();
+                writer.Dispose();
+            }
+        }
+
+        [Fact]
+        public void SerializeToString_SerializesConstructorArguments()
+        {
+            // Arrange
+            var designerSerializationManager = new DesignerSerializationManager();
+            var manager = new WorkflowMarkupSerializationManager(designerSerializationManager);
+
+            var serializer = new TestableMarkupExtensionSerializerWithConstructor();
+            var markupExtension = new TestMarkupExtensionWithConstructor("testValue");
+            var sb = new StringBuilder();
+            var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
+            var writer = XmlWriter.Create(sb, settings);
+            manager.WorkflowMarkupStack.Push(writer);
+
+            try
+            {
+                writer.WriteStartElement("", "Root", "http://schemas.microsoft.com/winfx/2006/xaml");
+                writer.WriteAttributeString("xmlns", "ns0", null, "clr-namespace:LogicBuilder.Workflow.Tests.ComponentModel.Serialization;Assembly=LogicBuilder.Workflow.ComponentModel.Serialization.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=646893bec0268535");
+
+                using (designerSerializationManager.CreateSession())
+                {
+                    // Act
+                    serializer.SerializeToString(manager, markupExtension);
+                }
+
+                writer.WriteEndElement();
+                writer.Flush();
+
+                // Assert
+                var result = sb.ToString();
+                Assert.Contains("testValue", result);
+            }
+            finally
+            {
+                manager.WorkflowMarkupStack.Pop();
+                writer.Dispose();
+            }
+        }
+
+        [Fact]
+        public void SerializeToString_HandlesNullConstructorArguments()
+        {
+            // Arrange
+            var designerSerializationManager = new DesignerSerializationManager();
+            var manager = new WorkflowMarkupSerializationManager(designerSerializationManager);
+
+            var serializer = new TestableMarkupExtensionSerializerWithNullableConstructor();
+            var markupExtension = new TestMarkupExtensionWithNullableConstructor(null);
+            var sb = new StringBuilder();
+            var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
+            var writer = XmlWriter.Create(sb, settings);
+            manager.WorkflowMarkupStack.Push(writer);
+
+            try
+            {
+                writer.WriteStartElement("", "Root", "http://schemas.microsoft.com/winfx/2006/xaml");
+                writer.WriteAttributeString("xmlns", "ns0", null, "clr-namespace:LogicBuilder.Workflow.Tests.ComponentModel.Serialization;Assembly=LogicBuilder.Workflow.ComponentModel.Serialization.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=646893bec0268535");
+
+                using (designerSerializationManager.CreateSession())
+                {
+                    // Act
+                    serializer.SerializeToString(manager, markupExtension);
+                }
+
+                writer.WriteEndElement();
+                writer.Flush();
+
+                // Assert - should complete without error
+                var result = sb.ToString();
+                Assert.Contains("{", result);
+                Assert.Contains("}", result);
+            }
+            finally
+            {
+                manager.WorkflowMarkupStack.Pop();
+                writer.Dispose();
+            }
+        }
+
+        [Fact]
+        public void SerializeToString_HandlesTypeConstructorArguments()
+        {
+            // Arrange
+            var designerSerializationManager = new DesignerSerializationManager();
+            var manager = new WorkflowMarkupSerializationManager(designerSerializationManager);
+
+            var serializer = new TestableMarkupExtensionSerializerWithTypeConstructor();
+            var markupExtension = new TestMarkupExtensionWithTypeConstructor(typeof(string));
+            var sb = new StringBuilder();
+            var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
+            var writer = XmlWriter.Create(sb, settings);
+            manager.WorkflowMarkupStack.Push(writer);
+
+            try
+            {
+                writer.WriteStartElement("", "Root", "http://schemas.microsoft.com/winfx/2006/xaml");
+                writer.WriteAttributeString("xmlns", "ns0", null, "clr-namespace:LogicBuilder.Workflow.Tests.ComponentModel.Serialization;Assembly=LogicBuilder.Workflow.ComponentModel.Serialization.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=646893bec0268535");
+                writer.WriteAttributeString("xmlns", "ns1", null, "clr-namespace:System;Assembly=System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e");
+
+                using (designerSerializationManager.CreateSession())
+                {
+                    // Act
+                    serializer.SerializeToString(manager, markupExtension);
+                }
+
+                writer.WriteEndElement();
+                writer.Flush();
+
+                // Assert
+                var result = sb.ToString();
+                Assert.Contains("{", result);
+                Assert.Contains("}", result);
+            }
+            finally
+            {
+                manager.WorkflowMarkupStack.Pop();
+                writer.Dispose();
+            }
+        }
+
+        [Fact]
+        public void SerializeToString_SkipsPropertiesWithConstructorArgumentAttribute()
+        {
+            // Arrange
+            var designerSerializationManager = new DesignerSerializationManager();
+            var manager = new WorkflowMarkupSerializationManager(designerSerializationManager);
+
+            var serializer = new TestableMarkupExtensionSerializerWithConstructor();
+            var markupExtension = new TestMarkupExtensionWithConstructor("testValue");
+            var sb = new StringBuilder();
+            var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
+            var writer = XmlWriter.Create(sb, settings);
+            manager.WorkflowMarkupStack.Push(writer);
+
+            try
+            {
+                writer.WriteStartElement("", "Root", "http://schemas.microsoft.com/winfx/2006/xaml");
+                writer.WriteAttributeString("xmlns", "ns0", null, "clr-namespace:LogicBuilder.Workflow.Tests.ComponentModel.Serialization;Assembly=LogicBuilder.Workflow.ComponentModel.Serialization.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=646893bec0268535");
+
+                using (designerSerializationManager.CreateSession())
+                {
+                    // Act
+                    serializer.SerializeToString(manager, markupExtension);
+                }
+
+                writer.WriteEndElement();
+                writer.Flush();
+
+                // Assert - Value property should not appear as a property since it's a constructor argument
+                var result = sb.ToString();
+                // The value should appear as constructor arg, not as property=value syntax
+                Assert.Contains("testValue", result);
+            }
+            finally
+            {
+                manager.WorkflowMarkupStack.Pop();
+                writer.Dispose();
+            }
+        }
+
+        [Fact]
+        public void SerializeToString_HandlesIntConstructorArguments()
+        {
+            // Arrange
+            var designerSerializationManager = new DesignerSerializationManager();
+            var manager = new WorkflowMarkupSerializationManager(designerSerializationManager);
+
+            var serializer = new TestableMarkupExtensionSerializerWithIntConstructor();
+            var markupExtension = new TestMarkupExtensionWithIntConstructor(42);
+            var sb = new StringBuilder();
+            var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
+            var writer = XmlWriter.Create(sb, settings);
+            manager.WorkflowMarkupStack.Push(writer);
+
+            try
+            {
+                writer.WriteStartElement("", "Root", "http://schemas.microsoft.com/winfx/2006/xaml");
+                writer.WriteAttributeString("xmlns", "ns0", null, "clr-namespace:LogicBuilder.Workflow.Tests.ComponentModel.Serialization;Assembly=LogicBuilder.Workflow.ComponentModel.Serialization.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=646893bec0268535");
+
+                using (designerSerializationManager.CreateSession())
+                {
+                    // Act
+                    serializer.SerializeToString(manager, markupExtension);
+                }
+
+                writer.WriteEndElement();
+                writer.Flush();
+
+                // Assert
+                var result = sb.ToString();
+                Assert.Contains("42", result);
+            }
+            finally
+            {
+                manager.WorkflowMarkupStack.Pop();
+                writer.Dispose();
+            }
+        }
+
+        [Fact]
+        public void SerializeToString_HandlesTypePropertyValues()
+        {
+            // Arrange
+            var designerSerializationManager = new DesignerSerializationManager();
+            var manager = new WorkflowMarkupSerializationManager(designerSerializationManager);
+
+            var markupExtension = new TestMarkupExtensionWithTypeProperty
+            {
+                TypeProperty = typeof(int)
+            };
+            var sb = new StringBuilder();
+            var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
+            var writer = XmlWriter.Create(sb, settings);
+            manager.WorkflowMarkupStack.Push(writer);
+
+            try
+            {
+                writer.WriteStartElement("", "Root", "http://schemas.microsoft.com/winfx/2006/xaml");
+                writer.WriteAttributeString("xmlns", "ns0", null, "clr-namespace:LogicBuilder.Workflow.Tests.ComponentModel.Serialization;Assembly=LogicBuilder.Workflow.ComponentModel.Serialization.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=646893bec0268535");
+
+                using (designerSerializationManager.CreateSession())
+                {
+                    // Act
+                    _serializer.SerializeToString(manager, markupExtension);
+                }
+
+                writer.WriteEndElement();
+                writer.Flush();
+
+                // Assert
+                var result = sb.ToString();
+                Assert.Contains("TypeProperty", result);
+            }
+            finally
+            {
+                manager.WorkflowMarkupStack.Pop();
+                writer.Dispose();
+            }
+        }
 
         #endregion
 
@@ -428,6 +676,58 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             }
         }
 
+        private class TestableMarkupExtensionSerializerWithConstructor : MarkupExtensionSerializer
+        {
+            protected override InstanceDescriptor GetInstanceDescriptor(WorkflowMarkupSerializationManager serializationManager, object value)
+            {
+                if (value is TestMarkupExtensionWithConstructor ext)
+                {
+                    var ctor = typeof(TestMarkupExtensionWithConstructor).GetConstructor([typeof(string)]);
+                    return new InstanceDescriptor(ctor, new object[] { ext.Value });
+                }
+                return base.GetInstanceDescriptor(serializationManager, value);
+            }
+        }
+
+        private class TestableMarkupExtensionSerializerWithNullableConstructor : MarkupExtensionSerializer
+        {
+            protected override InstanceDescriptor GetInstanceDescriptor(WorkflowMarkupSerializationManager serializationManager, object value)
+            {
+                if (value is TestMarkupExtensionWithNullableConstructor ext)
+                {
+                    var ctor = typeof(TestMarkupExtensionWithNullableConstructor).GetConstructor([typeof(string)]);
+                    return new InstanceDescriptor(ctor, new object[] { ext.Value! });
+                }
+                return base.GetInstanceDescriptor(serializationManager, value);
+            }
+        }
+
+        private class TestableMarkupExtensionSerializerWithTypeConstructor : MarkupExtensionSerializer
+        {
+            protected override InstanceDescriptor GetInstanceDescriptor(WorkflowMarkupSerializationManager serializationManager, object value)
+            {
+                if (value is TestMarkupExtensionWithTypeConstructor ext)
+                {
+                    var ctor = typeof(TestMarkupExtensionWithTypeConstructor).GetConstructor([typeof(Type)]);
+                    return new InstanceDescriptor(ctor, new object[] { ext.TargetType });
+                }
+                return base.GetInstanceDescriptor(serializationManager, value);
+            }
+        }
+
+        private class TestableMarkupExtensionSerializerWithIntConstructor : MarkupExtensionSerializer
+        {
+            protected override InstanceDescriptor GetInstanceDescriptor(WorkflowMarkupSerializationManager serializationManager, object value)
+            {
+                if (value is TestMarkupExtensionWithIntConstructor ext)
+                {
+                    var ctor = typeof(TestMarkupExtensionWithIntConstructor).GetConstructor([typeof(int)]);
+                    return new InstanceDescriptor(ctor, new object[] { ext.Value });
+                }
+                return base.GetInstanceDescriptor(serializationManager, value);
+            }
+        }
+
         // Test markup extension classes
         private class TestMarkupExtension : MarkupExtension
         {
@@ -466,6 +766,66 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             public override object ProvideValue(IServiceProvider provider)
             {
                 return _value;
+            }
+        }
+
+        private class TestMarkupExtensionWithNullableConstructor(string? value) : MarkupExtension
+        {
+            private readonly string? _value = value;
+
+            [ConstructorArgument("value")]
+            public string? Value
+            {
+                get { return _value; }
+            }
+
+            public override object ProvideValue(IServiceProvider provider)
+            {
+                return _value ?? string.Empty;
+            }
+        }
+
+        private class TestMarkupExtensionWithTypeConstructor(Type targetType) : MarkupExtension
+        {
+            private readonly Type _targetType = targetType;
+
+            [ConstructorArgument("targetType")]
+            public Type TargetType
+            {
+                get { return _targetType; }
+            }
+
+            public override object ProvideValue(IServiceProvider provider)
+            {
+                return _targetType;
+            }
+        }
+
+        private class TestMarkupExtensionWithIntConstructor(int value) : MarkupExtension
+        {
+            private readonly int _value = value;
+
+            [ConstructorArgument("value")]
+            public int Value
+            {
+                get { return _value; }
+            }
+
+            public override object ProvideValue(IServiceProvider provider)
+            {
+                return _value;
+            }
+        }
+
+        private class TestMarkupExtensionWithTypeProperty : MarkupExtension
+        {
+            public TestMarkupExtensionWithTypeProperty() { }
+
+            public Type TypeProperty { get; set; } = typeof(object);
+
+            public override object ProvideValue(IServiceProvider provider)
+            {
+                return this;
             }
         }
 

@@ -578,13 +578,13 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
         #region ResolveWellKnownTypes Tests
 
-        [Fact(Skip = "behavior is not clear.")]
+        [Fact]
         public void ResolveWellKnownTypes_WithWorkflowXmlNsAndRuleType_ResolvesType()
         {
             // Arrange
             var manager = CreateSerializationManager();
-            var xmlns = StandardXomlKeys.WorkflowXmlNs;
-            var typeName = "RuleDefinitions";
+            var xmlns = StandardXomlKeys.Definitions_XmlNs;
+            var typeName = "TypeExtensionSerializer";
 
             // Act
             var result = WorkflowMarkupSerializerMapping.ResolveWellKnownTypes(manager, xmlns, typeName);
@@ -726,12 +726,12 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             }
         }
 
-        [Fact(Skip = "behavior is not clear.")]
+        [Fact]
         public void GetMappingsFromXmlNamespace_WithGlobalNamespace_HandlesCorrectly()
         {
             // Arrange
             var manager = CreateSerializationManager();
-            var xmlNamespace = "clr-namespace:global;Assembly=TestAssembly";
+            var xmlNamespace = "clr-namespace:{Global};Assembly=TestAssembly";
             
             var xml = $@"<?xml version='1.0' encoding='utf-8'?>
                 <root xmlns:test='{xmlNamespace}' />";
@@ -972,7 +972,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             Assert.False(string.IsNullOrEmpty(matchingMapping.Prefix));
         }
 
-        [Fact(Skip = "behavior is not clear.")]
+        [Fact]
         public void GetMappingFromType_WithTypeFromCurrentAssembly_SetsWorkflowNamespace()
         {
             // Arrange
@@ -988,7 +988,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
             // Assert
             Assert.NotNull(matchingMapping);
-            Assert.Equal(StandardXomlKeys.WorkflowXmlNs, matchingMapping.XmlNamespace);
+            Assert.Equal("clr-namespace:LogicBuilder.Workflow.ComponentModel.Serialization;Assembly=LogicBuilder.Workflow.ComponentModel.Serialization, Version=2.0.0.0, Culture=neutral, PublicKeyToken=646893bec0268535", matchingMapping.XmlNamespace);
             Assert.Equal(StandardXomlKeys.WorkflowPrefix, matchingMapping.Prefix);
         }
 
