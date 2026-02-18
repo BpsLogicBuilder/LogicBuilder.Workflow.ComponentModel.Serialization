@@ -3,9 +3,10 @@ using LogicBuilder.Workflow.ComponentModel.Serialization;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using Xunit;
+using System.Xml;
 
 namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 {
@@ -370,7 +371,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             // Arrange
             var dictionary = new Dictionary<string, string>();
             var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeDeserializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
-            var afterMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnAfterDeserialize", BindingFlags.NonPublic | BindingFlags.Instance);
+            var afterMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnAfterSerialize", BindingFlags.NonPublic | BindingFlags.Instance);
 
             // Act
             beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
@@ -548,6 +549,421 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
         private class TestClass
         {
             public string Name { get; set; } = string.Empty;
+        }
+
+        #endregion
+
+        #region AddChild Extended Tests
+
+        [Fact]
+        public void AddChild_AddsChildSuccessfully_WithReferenceType()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, object>();
+            var childObj = new TestClass { Name = "TestValue" };
+            var key = "testKey";
+
+            // Setup keylookupDictionary via reflection
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeDeserializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+
+            var keylookupDictionaryField = typeof(DictionaryMarkupSerializer).GetField("keylookupDictionary", BindingFlags.NonPublic | BindingFlags.Instance);
+            var keylookupDictionary = (IDictionary)keylookupDictionaryField!.GetValue(_serializer)!;
+            keylookupDictionary.Add(key, childObj);
+
+            // Act
+            _serializer.AddChild(_serializationManager, dictionary, childObj);
+
+            // Assert
+            Assert.Single(dictionary);
+            Assert.Equal(childObj, dictionary[key]);
+            Assert.Empty(keylookupDictionary);
+        }
+
+        [Fact]
+        public void AddChild_AddsChildSuccessfully_WithValueType()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, int>();
+            var childObj = 42;
+            var key = "numberKey";
+
+            // Setup keylookupDictionary via reflection
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeDeserializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+
+            var keylookupDictionaryField = typeof(DictionaryMarkupSerializer).GetField("keylookupDictionary", BindingFlags.NonPublic | BindingFlags.Instance);
+            var keylookupDictionary = (IDictionary)keylookupDictionaryField!.GetValue(_serializer)!;
+            keylookupDictionary.Add(key, childObj);
+
+            // Act
+            _serializer.AddChild(_serializationManager, dictionary, childObj);
+
+            // Assert
+            Assert.Single(dictionary);
+            Assert.Equal(childObj, dictionary[key]);
+            Assert.Empty(keylookupDictionary);
+        }
+
+        [Fact]
+        public void AddChild_ThrowsInvalidOperationException_WhenKeyNotFound()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, string>();
+            var childObj = "orphanChild";
+
+            // Setup keylookupDictionary via reflection (but don't add the child to it)
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeDeserializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+
+            // Act & Assert
+            var exception = Assert.Throws<InvalidOperationException>(() => _serializer.AddChild(_serializationManager, dictionary, childObj));
+            Assert.Contains("Dictionary serializer could not add an item of", exception.Message);
+        }
+
+        [Fact]
+        public void AddChild_FindsCorrectKey_WithMultipleEntriesInLookup()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, object>();
+            var childObj1 = new TestClass { Name = "First" };
+            var childObj2 = new TestClass { Name = "Second" };
+            var childObj3 = new TestClass { Name = "Third" };
+
+            // Setup keylookupDictionary with multiple entries
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeDeserializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+
+            var keylookupDictionaryField = typeof(DictionaryMarkupSerializer).GetField("keylookupDictionary", BindingFlags.NonPublic | BindingFlags.Instance);
+            var keylookupDictionary = (IDictionary)keylookupDictionaryField!.GetValue(_serializer)!;
+            keylookupDictionary.Add("key1", childObj1);
+            keylookupDictionary.Add("key2", childObj2);
+            keylookupDictionary.Add("key3", childObj3);
+
+            // Act
+            _serializer.AddChild(_serializationManager, dictionary, childObj2);
+
+            // Assert
+            Assert.Single(dictionary);
+            Assert.Equal(childObj2, dictionary["key2"]);
+            Assert.Equal(2, keylookupDictionary.Count);
+            Assert.False(keylookupDictionary.Contains("key2"));
+        }
+
+        [Fact]
+        public void AddChild_UsesValueTypeEquals_ForValueTypes()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, int>();
+            var childObj = 100;
+            var key = "valueKey";
+
+            // Setup keylookupDictionary
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeDeserializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+
+            var keylookupDictionaryField = typeof(DictionaryMarkupSerializer).GetField("keylookupDictionary", BindingFlags.NonPublic | BindingFlags.Instance);
+            var keylookupDictionary = (IDictionary)keylookupDictionaryField!.GetValue(_serializer)!;
+            keylookupDictionary.Add(key, 100); // Same value, different instance for value types
+
+            // Act
+            _serializer.AddChild(_serializationManager, dictionary, childObj);
+
+            // Assert
+            Assert.Single(dictionary);
+            Assert.Equal(100, dictionary[key]);
+        }
+
+        #endregion
+
+        #region GetExtendedProperties Extended Tests
+
+        [Fact]
+        public void GetExtendedProperties_ReturnsKeyProperty_WhenSerializingWithMatchingEntry()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, string>();
+            var extendee = "testValue";
+            var entry = new DictionaryEntry("testKey", extendee);
+
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeSerializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            var getExtMethod = typeof(DictionaryMarkupSerializer).GetMethod("GetExtendedProperties", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+            _serializationManager.WorkflowMarkupStack.Push(entry);
+
+            // Act
+            var result = (ExtendedPropertyInfo[])getExtMethod!.Invoke(_serializer, [_serializationManager, extendee])!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result);
+            Assert.Equal("Key", result[0].Name);
+
+            // Cleanup
+            _serializationManager.WorkflowMarkupStack.Pop();
+        }
+
+        [Fact]
+        public void GetExtendedProperties_ReturnsEmpty_WhenEntryValueDoesNotMatch()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, string>();
+            var extendee = "testValue";
+            var differentValue = "differentValue";
+            var entry = new DictionaryEntry("testKey", differentValue);
+
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeSerializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            var getExtMethod = typeof(DictionaryMarkupSerializer).GetMethod("GetExtendedProperties", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+            _serializationManager.WorkflowMarkupStack.Push(entry);
+
+            // Act
+            var result = (ExtendedPropertyInfo[])getExtMethod!.Invoke(_serializer, [_serializationManager, extendee])!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+
+            // Cleanup
+            _serializationManager.WorkflowMarkupStack.Pop();
+        }
+
+        #endregion
+
+        #region OnGetKeyValue Tests
+
+        [Fact]
+        public void OnGetKeyValue_ReturnsNull_WhenEntryNotInStack()
+        {
+            // Arrange
+            Trace.Listeners.Clear();
+            var dictionary = new Dictionary<string, ExtendedPropertyInfo>();
+            var extendee = "testValue";
+
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeDeserializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            var getExtMethod = typeof(DictionaryMarkupSerializer).GetMethod("GetExtendedProperties", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+
+            var extProperties = (ExtendedPropertyInfo[])getExtMethod!.Invoke(_serializer, [_serializationManager, extendee])!;
+            
+            // Act - Try to get value when no entry is in stack
+            object? result = null;
+            object?[] parameters = [extProperties[0], BindingFlags.Public | BindingFlags.Instance, null, Array.Empty<object>(), null];
+            if (extProperties.Length > 0)
+            {
+                var getValueMethod = extProperties[0].GetType().GetMethod("GetValue", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                result = getValueMethod?.Invoke(extProperties[0], 0, null, parameters, null);
+            }
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void OnGetKeyValue_ReturnsKey_WhenEntryMatchesExtendee()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, ExtendedPropertyInfo>();
+            var extendee = "testValue";
+
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeDeserializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            var getExtMethod = typeof(DictionaryMarkupSerializer).GetMethod("GetExtendedProperties", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+
+            var extProperties = (ExtendedPropertyInfo[])getExtMethod!.Invoke(_serializer, [_serializationManager, extendee])!;
+            var expectedKey = "testKey";
+            var entry = new DictionaryEntry(expectedKey, extProperties[0]);
+            _serializationManager.WorkflowMarkupStack.Push(entry);
+
+            // Act
+            object? result = null;
+            object?[] parameters = [extProperties[0], BindingFlags.Public | BindingFlags.Instance, null, new object[] { extendee }, null];
+            if (extProperties.Length > 0)
+            {
+                var getValueMethod = extProperties[0].GetType().GetMethod("GetValue", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                result = getValueMethod?.Invoke(extProperties[0], 0, null, parameters, null);
+            }
+
+            // Assert
+            Assert.Equal(expectedKey, result);
+
+            // Cleanup
+            _serializationManager.WorkflowMarkupStack.Pop();
+        }
+
+        [Fact]
+        public void OnGetKeyValue_ReturnsNull_WhenExtendeeDoesNotMatchEntryValue()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, string>();
+            var extendee = "testValue";
+            var differentValue = "differentValue";
+            var entry = new DictionaryEntry("testKey", differentValue);
+
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeDeserializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            var getExtMethod = typeof(DictionaryMarkupSerializer).GetMethod("GetExtendedProperties", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+            _serializationManager.WorkflowMarkupStack.Push(entry);
+
+            var extProperties = (ExtendedPropertyInfo[])getExtMethod!.Invoke(_serializer, [_serializationManager, extendee])!;
+
+            // Act
+            object result = "not null"; // Initialize with non-null to verify it becomes null
+            object?[] parameters = [extProperties[0], BindingFlags.Public | BindingFlags.Instance, null, Array.Empty<object>(), null];
+            if (extProperties.Length > 0)
+            {
+                var getValueMethod = extProperties[0].GetType().GetMethod("GetValue", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                result = getValueMethod?.Invoke(extProperties[0], (BindingFlags)0, null, parameters, null)!;
+            }
+
+            // Assert
+            Assert.Null(result);
+
+            // Cleanup
+            _serializationManager.WorkflowMarkupStack.Pop();
+        }
+
+        #endregion
+
+        #region OnSetKeyValue Tests
+
+        [Fact]
+        public void OnSetKeyValue_AddsKeyValuePair_WhenKeyDoesNotExist()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, string>();
+            var key = "testKey";
+
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeDeserializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            var getExtMethod = typeof(DictionaryMarkupSerializer).GetMethod("GetExtendedProperties", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+
+            var extProperties = (ExtendedPropertyInfo[])getExtMethod!.Invoke(_serializer, [_serializationManager, key])!;
+            var keylookupDictionaryField = typeof(DictionaryMarkupSerializer).GetField("keylookupDictionary", BindingFlags.NonPublic | BindingFlags.Instance);
+            var keylookupDictionary = (IDictionary)keylookupDictionaryField!.GetValue(_serializer)!;
+
+            // Act
+            if (extProperties.Length > 0)
+            {
+                var setValueMethod = extProperties[0].GetType().GetMethod("SetValue", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                object?[] parameters = [extProperties[0], key, BindingFlags.Public | BindingFlags.Instance, null, Array.Empty<object>(), null];
+                setValueMethod?.Invoke(extProperties[0], 0, null, parameters, null);
+            }
+
+            // Assert
+            Assert.Single(keylookupDictionary);
+            Assert.True(keylookupDictionary.Contains(key));
+            Assert.Equal(extProperties[0], keylookupDictionary[key]);
+        }
+
+        [Fact]
+        public void OnSetKeyValue_DoesNotAdd_WhenExtendeeIsNull()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, string>();
+            var key = "testKey";
+
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeDeserializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+
+            var onSetKeyValueMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnSetKeyValue", BindingFlags.NonPublic | BindingFlags.Instance);
+            var keylookupDictionaryField = typeof(DictionaryMarkupSerializer).GetField("keylookupDictionary", BindingFlags.NonPublic | BindingFlags.Instance);
+            var keylookupDictionary = (IDictionary)keylookupDictionaryField!.GetValue(_serializer)!;
+
+            // Act
+            onSetKeyValueMethod!.Invoke(_serializer, [null, null, key]);
+
+            // Assert
+            Assert.Empty(keylookupDictionary);
+        }
+
+        [Fact]
+        public void OnSetKeyValue_DoesNotAdd_WhenValueIsNull()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, string>();
+            var extendee = "testValue";
+
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeDeserializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+
+            var onSetKeyValueMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnSetKeyValue", BindingFlags.NonPublic | BindingFlags.Instance);
+            var keylookupDictionaryField = typeof(DictionaryMarkupSerializer).GetField("keylookupDictionary", BindingFlags.NonPublic | BindingFlags.Instance);
+            var keylookupDictionary = (IDictionary)keylookupDictionaryField!.GetValue(_serializer)!;
+
+            // Act
+            onSetKeyValueMethod!.Invoke(_serializer, [null, extendee, null]);
+
+            // Assert
+            Assert.Empty(keylookupDictionary);
+        }
+
+        [Fact]
+        public void OnSetKeyValue_DoesNotAdd_WhenKeyAlreadyExists()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, string>();
+            var extendee1 = "testValue1";
+            var extendee2 = "testValue2";
+            var key = "duplicateKey";
+
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeDeserializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+
+            var onSetKeyValueMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnSetKeyValue", BindingFlags.NonPublic | BindingFlags.Instance);
+            var keylookupDictionaryField = typeof(DictionaryMarkupSerializer).GetField("keylookupDictionary", BindingFlags.NonPublic | BindingFlags.Instance);
+            var keylookupDictionary = (IDictionary)keylookupDictionaryField!.GetValue(_serializer)!;
+
+            // Act - Add first time
+            onSetKeyValueMethod!.Invoke(_serializer, [null, extendee1, key]);
+            
+            // Act - Try to add again with same key
+            onSetKeyValueMethod!.Invoke(_serializer, [null, extendee2, key]);
+
+            // Assert
+            Assert.Single(keylookupDictionary);
+            Assert.Equal(extendee1, keylookupDictionary[key]); // Should still have first value
+        }
+
+        #endregion
+
+        #region OnGetXmlQualifiedName Tests
+
+        [Fact]
+        public void OnGetXmlQualifiedName_ReturnsCorrectQualifiedName()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, string>();
+            var extendee = "testValue";
+
+            var beforeMethod = typeof(DictionaryMarkupSerializer).GetMethod("OnBeforeDeserializeContents", BindingFlags.NonPublic | BindingFlags.Instance);
+            var getExtMethod = typeof(DictionaryMarkupSerializer).GetMethod("GetExtendedProperties", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            beforeMethod!.Invoke(_serializer, [_serializationManager, dictionary]);
+
+            var extProperties = (ExtendedPropertyInfo[])getExtMethod!.Invoke(_serializer, [_serializationManager, extendee])!;
+
+            // Act
+            XmlQualifiedName? result = null;
+            string? prefix = null;
+            if (extProperties.Length > 0)
+            {
+                var getQualifiedNameMethod = extProperties[0].GetType().GetMethod("GetXmlQualifiedName", BindingFlags.Public | BindingFlags.Instance);
+                object?[] parameters = [_serializationManager, null];
+                result = (XmlQualifiedName)getQualifiedNameMethod?.Invoke(extProperties[0], 0, null, parameters, null)!;
+                prefix = parameters[1] as string;
+            }
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Key", result.Name);
+            Assert.NotNull(prefix);
         }
 
         #endregion

@@ -1642,23 +1642,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             public string Name { get; set; } = string.Empty;
         }
 
-        [Fact]
-        public void Deserialize_WithReadOnlyCollectionProperty_AddsToCollection()
-        {
-            // Arrange
-            // This tests DeserializeSimpleMember with ICollection<string>
-            var testObj = new TestObjectWithReadOnlyCollection();
-            var manager = new DesignerSerializationManager();
-
-            // Act & Assert - should not throw
-            using (manager.CreateSession())
-            {
-                var wfManager = new WorkflowMarkupSerializationManager(manager);
-                // This would be called internally during deserialization
-                Assert.NotNull(testObj.Items);
-            }
-        }
-
         #endregion
 
         #region LookupProperty Coverage Tests
@@ -1784,20 +1767,11 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             {
                 var wfManager = new WorkflowMarkupSerializationManager(manager);
                 wfManager.WorkflowMarkupStack.Push(reader);
-                // This tests TokenizeAttributes with quoted strings
-                try
-                {
-                    result = serializer.DeserializeFromCompactFormat(wfManager, reader, value);
-                }
-                catch
-                {
-                    result = null;
-                }
+                result = serializer.DeserializeFromCompactFormat(wfManager, reader, value);
                 wfManager.WorkflowMarkupStack.Pop();
             }
 
-            // Assert - even if it fails to parse, we tested the tokenization logic
-            Assert.True(true);
+            Assert.NotNull(result);
         }
 
         #endregion

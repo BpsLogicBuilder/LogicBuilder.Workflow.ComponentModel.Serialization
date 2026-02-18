@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Xml;
-using Xunit;
 
 namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 {
@@ -384,6 +383,106 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
             // Assert
             Assert.Equal(_testPropertyInfo.IsDefined(typeof(ObsoleteAttribute), true), isDefined);
+        }
+
+        #endregion
+
+        #region IsExtendedProperty Tests
+
+        [Fact]
+        public void IsExtendedProperty_WithPropertyList_ReturnsTrue_WhenMatchingPropertyExists()
+        {
+            // Arrange
+            var qualifiedName = new XmlQualifiedName("TestProperty", "http://test.namespace");
+            
+            XmlQualifiedName qualifiedNameHandler(ExtendedPropertyInfo prop, WorkflowMarkupSerializationManager mgr, out string prefix)
+            {
+                prefix = "test";
+                return qualifiedName;
+            }
+            
+            var extendedPropertyInfo = new ExtendedPropertyInfo(_testPropertyInfo, null, null, qualifiedNameHandler);
+            var propertyList = new List<PropertyInfo> { extendedPropertyInfo };
+
+            // Act
+            bool result = ExtendedPropertyInfo.IsExtendedProperty(_serializationManager, propertyList, qualifiedName);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void IsExtendedProperty_WithPropertyList_ReturnsFalse_WhenNoMatchingPropertyExists()
+        {
+            // Arrange
+            var searchQualifiedName = new XmlQualifiedName("DifferentProperty", "http://test.namespace");
+            var propertyQualifiedName = new XmlQualifiedName("TestProperty", "http://test.namespace");
+            
+            XmlQualifiedName qualifiedNameHandler(ExtendedPropertyInfo prop, WorkflowMarkupSerializationManager mgr, out string prefix)
+            {
+                prefix = "test";
+                return propertyQualifiedName;
+            }
+            
+            var extendedPropertyInfo = new ExtendedPropertyInfo(_testPropertyInfo, null, null, qualifiedNameHandler);
+            var propertyList = new List<PropertyInfo> { extendedPropertyInfo };
+
+            // Act
+            bool result = ExtendedPropertyInfo.IsExtendedProperty(_serializationManager, propertyList, searchQualifiedName);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsExtendedProperty_WithPropertyList_ReturnsFalse_WhenListContainsOnlyNonExtendedProperties()
+        {
+            // Arrange
+            var qualifiedName = new XmlQualifiedName("TestProperty", "http://test.namespace");
+            var propertyList = new List<PropertyInfo> { _testPropertyInfo }; // Regular PropertyInfo, not ExtendedPropertyInfo
+
+            // Act
+            bool result = ExtendedPropertyInfo.IsExtendedProperty(_serializationManager, propertyList, qualifiedName);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsExtendedProperty_WithPropertyList_ReturnsFalse_WhenNamespaceDoesNotMatch()
+        {
+            // Arrange
+            var searchQualifiedName = new XmlQualifiedName("TestProperty", "http://different.namespace");
+            var propertyQualifiedName = new XmlQualifiedName("TestProperty", "http://test.namespace");
+            
+            XmlQualifiedName qualifiedNameHandler(ExtendedPropertyInfo prop, WorkflowMarkupSerializationManager mgr, out string prefix)
+            {
+                prefix = "test";
+                return propertyQualifiedName;
+            }
+            
+            var extendedPropertyInfo = new ExtendedPropertyInfo(_testPropertyInfo, null, null, qualifiedNameHandler);
+            var propertyList = new List<PropertyInfo> { extendedPropertyInfo };
+
+            // Act
+            bool result = ExtendedPropertyInfo.IsExtendedProperty(_serializationManager, propertyList, searchQualifiedName);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsExtendedProperty_WithPropertyList_ReturnsFalse_WhenListIsEmpty()
+        {
+            // Arrange
+            var qualifiedName = new XmlQualifiedName("TestProperty", "http://test.namespace");
+            var propertyList = new List<PropertyInfo>();
+
+            // Act
+            bool result = ExtendedPropertyInfo.IsExtendedProperty(_serializationManager, propertyList, qualifiedName);
+
+            // Assert
+            Assert.False(result);
         }
 
         #endregion

@@ -135,7 +135,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var markupExtension = new TestMarkupExtension();
             var sb = new StringBuilder();
             var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
-            var writer = XmlWriter.Create(sb, settings);
+            using var writer = XmlWriter.Create(sb, settings);
 
             _serializationManager.WorkflowMarkupStack.Push(writer);
 
@@ -179,7 +179,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             };
             var sb = new StringBuilder();
             var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
-            var writer = XmlWriter.Create(sb, settings);
+            using var writer = XmlWriter.Create(sb, settings);
             manager.WorkflowMarkupStack.Push(writer);
 
             try
@@ -222,7 +222,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             };
             var sb = new StringBuilder();
             var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
-            var writer = XmlWriter.Create(sb, settings);
+            using var writer = XmlWriter.Create(sb, settings);
             manager.WorkflowMarkupStack.Push(writer);
 
             try
@@ -261,7 +261,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var markupExtension = new TestMarkupExtensionWithConstructor("testValue");
             var sb = new StringBuilder();
             var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
-            var writer = XmlWriter.Create(sb, settings);
+            using var writer = XmlWriter.Create(sb, settings);
             manager.WorkflowMarkupStack.Push(writer);
 
             try
@@ -300,7 +300,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var markupExtension = new TestMarkupExtensionWithNullableConstructor(null);
             var sb = new StringBuilder();
             var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
-            var writer = XmlWriter.Create(sb, settings);
+            using var writer = XmlWriter.Create(sb, settings);
             manager.WorkflowMarkupStack.Push(writer);
 
             try
@@ -340,7 +340,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var markupExtension = new TestMarkupExtensionWithTypeConstructor(typeof(string));
             var sb = new StringBuilder();
             var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
-            var writer = XmlWriter.Create(sb, settings);
+            using var writer = XmlWriter.Create(sb, settings);
             manager.WorkflowMarkupStack.Push(writer);
 
             try
@@ -381,7 +381,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var markupExtension = new TestMarkupExtensionWithConstructor("testValue");
             var sb = new StringBuilder();
             var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
-            var writer = XmlWriter.Create(sb, settings);
+            using var writer = XmlWriter.Create(sb, settings);
             manager.WorkflowMarkupStack.Push(writer);
 
             try
@@ -421,7 +421,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var markupExtension = new TestMarkupExtensionWithIntConstructor(42);
             var sb = new StringBuilder();
             var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
-            var writer = XmlWriter.Create(sb, settings);
+            using var writer = XmlWriter.Create(sb, settings);
             manager.WorkflowMarkupStack.Push(writer);
 
             try
@@ -462,7 +462,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             };
             var sb = new StringBuilder();
             var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
-            var writer = XmlWriter.Create(sb, settings);
+            using var writer = XmlWriter.Create(sb, settings);
             manager.WorkflowMarkupStack.Push(writer);
 
             try

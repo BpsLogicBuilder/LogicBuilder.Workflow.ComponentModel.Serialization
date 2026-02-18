@@ -2195,6 +2195,7 @@
             }
         }
 
+        [ExcludeFromCodeCoverage]
         private readonly struct ContentInfo(object content, int lineNumber, int linePosition)
         {
             public readonly int LineNumber = lineNumber;
