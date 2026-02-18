@@ -223,24 +223,22 @@ namespace LogicBuilder.Workflow.Tests
             Assert.NotNull(attribute);
         }
 
-        [Fact]
-        public void SRCategoryAttribute_WorksWithKnownResourceKeys()
+        [Theory]
+        [InlineData("Activity")]
+        [InlineData("Handlers")]
+        [InlineData("Conditions")]
+        [InlineData("Parameters")]
+        public void SRCategoryAttribute_WorksWithKnownResourceKeys(string knownKey)
         {
-            // Test with known resource keys from SR class
-            var knownKeys = new[] { "Activity", "Handlers", "Conditions", "Parameters" };
+            // Arrange
+            var attribute = new SRCategoryAttribute(knownKey);
 
-            foreach (var key in knownKeys)
-            {
-                // Arrange
-                var attribute = new SRCategoryAttribute(key);
+            // Act
+            var category = attribute.Category;
 
-                // Act
-                var category = attribute.Category;
-
-                // Assert
-                Assert.NotNull(category);
-                Assert.NotEmpty(category);
-            }
+            // Assert
+            Assert.NotNull(category);
+            Assert.NotEmpty(category);
         }
 
         #endregion
