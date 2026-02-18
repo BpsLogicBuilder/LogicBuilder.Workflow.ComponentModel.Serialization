@@ -962,7 +962,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal("Key", result.Name);
+            Assert.Equal("Key", result?.Name);
             Assert.NotNull(prefix);
         }
 
