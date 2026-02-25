@@ -10,6 +10,15 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 {
     public class ExtendedPropertyInfoTest
     {
+        internal class MockWorkflowMarkupSerializer : WorkflowMarkupSerializer
+        {
+            public ExtendedPropertyInfo[] ExtendedPropertyInfos { get; set; } = [];
+            internal override ExtendedPropertyInfo[] GetExtendedProperties(WorkflowMarkupSerializationManager manager, object extendee)
+            {
+                return ExtendedPropertyInfos;
+            }
+        }
+
         private readonly WorkflowMarkupSerializationManager _serializationManager;
         private readonly PropertyInfo _testPropertyInfo;
 
@@ -387,7 +396,149 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
         #endregion
 
-        #region IsExtendedProperty Tests
+        #region IsExtendedProperty Tests - Manager Overload
+
+        [Fact]
+        public void IsExtendedProperty_WithManager_ReturnsTrue_WhenMatchingPropertyExists()
+        {
+            // Arrange
+            var manager = new DesignerSerializationManager();
+            var mockManager = new WorkflowMarkupSerializationManager(manager);
+            var testObject = new TestClass();
+            var qualifiedName = new XmlQualifiedName("TestProperty", "http://test.namespace");
+            
+            XmlQualifiedName qualifiedNameHandler(ExtendedPropertyInfo prop, WorkflowMarkupSerializationManager mgr, out string prefix)
+            {
+                prefix = "test";
+                return qualifiedName;
+            }
+            
+            var extendedPropertyInfo = new ExtendedPropertyInfo(_testPropertyInfo, null, null, qualifiedNameHandler);
+            var extendedProperties = new ExtendedPropertyInfo[] { extendedPropertyInfo };
+            FieldInfo fieldInfo = typeof(WorkflowMarkupSerializationManager).GetField("extendedPropertiesProviders", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            fieldInfo.SetValue(mockManager, new List<WorkflowMarkupSerializer> { new MockWorkflowMarkupSerializer() { ExtendedPropertyInfos = extendedProperties } });
+            using (manager.CreateSession())
+            {
+                mockManager.Context.Append(testObject);
+
+                // Act
+                bool result = ExtendedPropertyInfo.IsExtendedProperty(mockManager, qualifiedName);
+
+                // Assert
+                Assert.True(result);
+            }
+        }
+
+        [Fact]
+        public void IsExtendedProperty_WithManager_ReturnsFalse_WhenNoMatchingPropertyExists()
+        {
+            // Arrange
+            var manager = new DesignerSerializationManager();
+            var mockManager = new WorkflowMarkupSerializationManager(manager);
+            var testObject = new TestClass();
+            var searchQualifiedName = new XmlQualifiedName("DifferentProperty", "http://test.namespace");
+            var propertyQualifiedName = new XmlQualifiedName("TestProperty", "http://test.namespace");
+            
+            XmlQualifiedName qualifiedNameHandler(ExtendedPropertyInfo prop, WorkflowMarkupSerializationManager mgr, out string prefix)
+            {
+                prefix = "test";
+                return propertyQualifiedName;
+            }
+            
+            var extendedPropertyInfo = new ExtendedPropertyInfo(_testPropertyInfo, null, null, qualifiedNameHandler);
+            FieldInfo fieldInfo = typeof(WorkflowMarkupSerializationManager).GetField("extendedPropertiesProviders", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            fieldInfo.SetValue(mockManager, new List<WorkflowMarkupSerializer> { new MockWorkflowMarkupSerializer() { ExtendedPropertyInfos = [extendedPropertyInfo] } });
+
+            using (manager.CreateSession())
+            {
+                mockManager.Context.Append(testObject);
+
+                // Act
+                bool result = ExtendedPropertyInfo.IsExtendedProperty(mockManager, searchQualifiedName);
+
+                // Assert
+                Assert.False(result);
+            }
+        }
+
+        [Fact]
+        public void IsExtendedProperty_WithManager_ReturnsFalse_WhenNameMatchesButNamespaceDoesNot()
+        {
+            // Arrange
+            var manager = new DesignerSerializationManager();
+            var mockManager = new WorkflowMarkupSerializationManager(manager);
+            var testObject = new TestClass();
+            var searchQualifiedName = new XmlQualifiedName("TestProperty", "http://different.namespace");
+            var propertyQualifiedName = new XmlQualifiedName("TestProperty", "http://test.namespace");
+            
+            XmlQualifiedName qualifiedNameHandler(ExtendedPropertyInfo prop, WorkflowMarkupSerializationManager mgr, out string prefix)
+            {
+                prefix = "test";
+                return propertyQualifiedName;
+            }
+            
+            var extendedPropertyInfo = new ExtendedPropertyInfo(_testPropertyInfo, null, null, qualifiedNameHandler);
+            var extendedProperties = new ExtendedPropertyInfo[] { extendedPropertyInfo };
+            FieldInfo fieldInfo = typeof(WorkflowMarkupSerializationManager).GetField("extendedPropertiesProviders", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            fieldInfo.SetValue(mockManager, new List<WorkflowMarkupSerializer> { new MockWorkflowMarkupSerializer() { ExtendedPropertyInfos = extendedProperties } });
+
+            using (manager.CreateSession())
+            {
+                mockManager.Context.Append(testObject);
+
+                // Act
+                bool result = ExtendedPropertyInfo.IsExtendedProperty(mockManager, searchQualifiedName);
+
+                // Assert
+                Assert.False(result);
+            }
+        }
+
+        [Fact]
+        public void IsExtendedProperty_WithManager_ReturnsFalse_WhenCurrentContextIsNull()
+        {
+            // Arrange
+            var manager = new DesignerSerializationManager();
+            var mockManager = new WorkflowMarkupSerializationManager(manager);
+            var qualifiedName = new XmlQualifiedName("TestProperty", "http://test.namespace");
+
+            using (manager.CreateSession())
+            {
+                // Act
+                bool result = ExtendedPropertyInfo.IsExtendedProperty(mockManager, qualifiedName);
+
+                // Assert
+                Assert.False(result);
+            }
+        }
+
+        [Fact]
+        public void IsExtendedProperty_WithManager_ReturnsFalse_WhenExtendedPropertiesIsEmpty()
+        {
+            // Arrange
+            var manager = new DesignerSerializationManager();
+            var mockManager = new WorkflowMarkupSerializationManager(manager);
+            var testObject = new TestClass();
+            var qualifiedName = new XmlQualifiedName("TestProperty", "http://test.namespace");
+            var extendedProperties = Array.Empty<ExtendedPropertyInfo>();
+            FieldInfo fieldInfo = typeof(WorkflowMarkupSerializationManager).GetField("extendedPropertiesProviders", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            fieldInfo.SetValue(mockManager, new List<WorkflowMarkupSerializer> { new MockWorkflowMarkupSerializer() { ExtendedPropertyInfos = extendedProperties } });
+
+            using (manager.CreateSession())
+            {
+                mockManager.Context.Append(testObject);
+
+                // Act
+                bool result = ExtendedPropertyInfo.IsExtendedProperty(mockManager, qualifiedName);
+
+                // Assert
+                Assert.False(result);
+            }
+        }
+
+        #endregion
+
+        #region IsExtendedProperty Tests - PropertyList Overload
 
         [Fact]
         public void IsExtendedProperty_WithPropertyList_ReturnsTrue_WhenMatchingPropertyExists()

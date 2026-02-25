@@ -7,7 +7,7 @@
 
     internal sealed class StringCollectionMarkupSerializer : WorkflowMarkupSerializer
     {
-        protected internal override PropertyInfo[] GetProperties(WorkflowMarkupSerializationManager manager, object obj)
+        protected internal override PropertyInfo[] GetProperties(WorkflowMarkupSerializationManager serializationManager, object obj)
         {
             return new PropertyInfo[] { };
         }

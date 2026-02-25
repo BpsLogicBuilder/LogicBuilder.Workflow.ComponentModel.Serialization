@@ -106,8 +106,6 @@ internal sealed class SR
     internal static string GetString(CultureInfo culture, string name, params object[] args)
     {
         SR sys = GetLoader();
-        if (sys == null)
-            return null;
         string res = sys.resources.GetString(name, culture);
         System.Diagnostics.Debug.Assert(res != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", new object[] { name }));
         return args != null && args.Length > 0
@@ -123,8 +121,6 @@ internal sealed class SR
     internal static string GetString(CultureInfo culture, string name)
     {
         SR sys = GetLoader();
-        if (sys == null)
-            return null;
         string res = sys.resources.GetString(name, culture);
         System.Diagnostics.Debug.Assert(res != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", new object[] { name }));
         return res;

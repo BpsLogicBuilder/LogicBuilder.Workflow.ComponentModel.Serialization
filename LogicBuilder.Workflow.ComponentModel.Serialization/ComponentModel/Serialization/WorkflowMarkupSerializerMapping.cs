@@ -58,9 +58,9 @@
             this.unifiedAssemblyName = unifiedAssemblyName ?? throw new ArgumentNullException("unifiedAssemblyName");
         }
 
-        public override bool Equals(object value)
+        public override bool Equals(object obj)
         {
-            if (value is not WorkflowMarkupSerializerMapping mapping)
+            if (obj is not WorkflowMarkupSerializerMapping mapping)
             {
                 return false;
             }

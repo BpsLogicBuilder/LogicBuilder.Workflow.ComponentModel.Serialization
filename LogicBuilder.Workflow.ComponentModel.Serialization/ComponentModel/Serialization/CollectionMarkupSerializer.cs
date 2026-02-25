@@ -53,15 +53,15 @@
                 obj.GetType().InvokeMember("Clear", BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance, null, obj, [], CultureInfo.InvariantCulture);
         }
 
-        protected internal override void AddChild(WorkflowMarkupSerializationManager serializationManager, object parentObj, object childObj)
+        protected internal override void AddChild(WorkflowMarkupSerializationManager serializationManager, object parentObject, object childObj)
         {
-            if (parentObj == null)
-                throw new ArgumentNullException("parentObj");
+            if (parentObject == null)
+                throw new ArgumentNullException(nameof(parentObject));
 
-            if (!IsValidCollectionType(parentObj.GetType()))
-                throw new Exception(SR.GetString(SR.Error_SerializerTypeRequirement, parentObj.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
+            if (!IsValidCollectionType(parentObject.GetType()))
+                throw new Exception(SR.GetString(SR.Error_SerializerTypeRequirement, parentObject.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
 
-            parentObj.GetType().InvokeMember("Add", BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance, null, parentObj, [childObj], CultureInfo.InvariantCulture);
+            parentObject.GetType().InvokeMember("Add", BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance, null, parentObject, [childObj], CultureInfo.InvariantCulture);
         }
 
         internal static bool IsValidCollectionType(Type collectionType)
