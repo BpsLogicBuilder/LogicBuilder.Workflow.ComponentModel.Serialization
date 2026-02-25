@@ -3,6 +3,7 @@
 [![Build Status](https://github.com/BpsLogicBuilder/LogicBuilder.Workflow.ComponentModel.Serialization/actions/workflows/ci.yml/badge.svg)](https://github.com/BpsLogicBuilder/LogicBuilder.Workflow.ComponentModel.Serialization/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/BpsLogicBuilder/LogicBuilder.Workflow.ComponentModel.Serialization/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/BpsLogicBuilder/LogicBuilder.Workflow.ComponentModel.Serialization/actions/workflows/github-code-scanning/codeql)
 [![codecov](https://codecov.io/gh/BpsLogicBuilder/LogicBuilder.Workflow.ComponentModel.Serialization/graph/badge.svg?token=CTUXSQYTCV)](https://codecov.io/gh/BpsLogicBuilder/LogicBuilder.Workflow.ComponentModel.Serialization)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=BpsLogicBuilder_LogicBuilder.Workflow.ComponentModel.Serialization&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=BpsLogicBuilder_LogicBuilder.Workflow.ComponentModel.Serialization)
 [![NuGet](https://img.shields.io/nuget/v/LogicBuilder.Workflow.ComponentModel.Serialization.svg)](https://www.nuget.org/packages/LogicBuilder.Workflow.ComponentModel.Serialization)
 
 ## Integration with LogicBuilder.Rules

@@ -295,7 +295,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
             // Assert
             Assert.Equal("Value1", error.UserData["Key1"]);
             Assert.Equal(42, error.UserData["Key2"]);
-            Assert.Equal(true, error.UserData["Key3"]);
+            Assert.True((bool)error.UserData["Key3"]!);
             Assert.Equal(3, error.UserData.Count);
         }
 

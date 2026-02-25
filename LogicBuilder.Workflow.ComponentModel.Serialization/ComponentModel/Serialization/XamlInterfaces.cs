@@ -104,7 +104,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
     internal sealed class NullExtension : MarkupExtension
     {
         public NullExtension() { }
-        public override object ProvideValue(IServiceProvider serviceProvider)
+        public override object ProvideValue(IServiceProvider provider)
         {
             return null;
         }

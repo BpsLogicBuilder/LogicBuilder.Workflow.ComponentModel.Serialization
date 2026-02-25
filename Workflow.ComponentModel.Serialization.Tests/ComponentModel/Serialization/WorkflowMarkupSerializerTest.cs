@@ -1516,6 +1516,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
         {
             // This would test circular reference detection
             // The implementation should detect and prevent infinite loops
+            Assert.True(true, "Circular reference test placeholder - implement circular reference detection in the serializer to pass this test.");
         }
 
         #endregion

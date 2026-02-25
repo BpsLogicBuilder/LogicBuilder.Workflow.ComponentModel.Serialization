@@ -40,24 +40,24 @@
             return (((IDictionary)value).Count > 0);
         }
 
-        protected internal override void ClearChildren(WorkflowMarkupSerializationManager serializationManager, object deserializedObject)
+        protected internal override void ClearChildren(WorkflowMarkupSerializationManager serializationManager, object obj)
         {
-            if (deserializedObject == null)
-                throw new ArgumentNullException("deserializedObject");
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
 
-            IDictionary dictionary = deserializedObject as IDictionary ?? throw new InvalidOperationException(SR.GetString(SR.Error_DictionarySerializerNonDictionaryObject));
+            IDictionary dictionary = obj as IDictionary ?? throw new InvalidOperationException(SR.GetString(SR.Error_DictionarySerializerNonDictionaryObject));
             dictionary.Clear();
         }
 
-        protected internal override void AddChild(WorkflowMarkupSerializationManager serializationManager, object parentObj, object childObj)
+        protected internal override void AddChild(WorkflowMarkupSerializationManager serializationManager, object parentObject, object childObj)
         {
-            if (parentObj == null)
-                throw new ArgumentNullException("parentObj");
+            if (parentObject == null)
+                throw new ArgumentNullException(nameof(parentObject));
 
             if (childObj == null)
                 throw new ArgumentNullException("childObj");
 
-            IDictionary dictionary = parentObj as IDictionary ?? throw new InvalidOperationException(SR.GetString(SR.Error_DictionarySerializerNonDictionaryObject));
+            IDictionary dictionary = parentObject as IDictionary ?? throw new InvalidOperationException(SR.GetString(SR.Error_DictionarySerializerNonDictionaryObject));
             object key = null;
             foreach (DictionaryEntry entry in keylookupDictionary)
             {
