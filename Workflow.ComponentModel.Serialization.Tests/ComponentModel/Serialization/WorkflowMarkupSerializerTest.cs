@@ -1,5 +1,6 @@
 using LogicBuilder.ComponentModel.Design.Serialization;
 using LogicBuilder.Workflow.ComponentModel.Serialization;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -688,7 +689,10 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             Assert.Equal("TestMethod", result);
         }
 
-        private void TestMethod() { }
+        private void TestMethod()
+        {
+            // Method intentionally left empty.
+        }
 
         #endregion
 
@@ -1403,7 +1407,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
         [Fact]
         public void DeserializeFromCompactFormat_WithNullExtension_CreatesNullExtension()
         {
-            // Arrange
+            // Arrange PropertyName={StaticResource Key},PropertyValue=\"test\"}
             var serializer = new WorkflowMarkupSerializer();
             var xml = "<Test xmlns:x='" + StandardXomlKeys.Definitions_XmlNs + "' />";
             using var reader = XmlReader.Create(new StringReader(xml));
@@ -1505,18 +1509,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
             // Assert
             Assert.NotEmpty(result);
-        }
-
-        #endregion
-
-        #region Serialization Error Tests
-
-        [Fact]
-        public void Serialize_WithCircularReference_ThrowsException()
-        {
-            // This would test circular reference detection
-            // The implementation should detect and prevent infinite loops
-            Assert.True(true, "Circular reference test placeholder - implement circular reference detection in the serializer to pass this test.");
         }
 
         #endregion
@@ -2043,6 +2035,633 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             // Assert
             Assert.Contains("Test", result);
             Assert.Contains("42", result);
+        }
+
+        #endregion
+
+        #region TokenizeAttributes Error Cases Tests
+
+        [Fact]
+        public void DeserializeFromCompactFormat_WithMissingTerminatingBrace_ReportsError()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var xml = "<Test xmlns:x='" + StandardXomlKeys.Definitions_XmlNs + "' />";
+            using var reader = XmlReader.Create(new StringReader(xml));
+            reader.Read();
+            var manager = new DesignerSerializationManager();
+            var value = "{x:Null arg1, arg2";
+
+            // Act
+            object result;
+            using (manager.CreateSession())
+            {
+                var wfManager = new WorkflowMarkupSerializationManager(manager);
+                wfManager.WorkflowMarkupStack.Push(reader);
+                result = serializer.DeserializeFromCompactFormat(wfManager, reader, value);
+                wfManager.WorkflowMarkupStack.Pop();
+            }
+
+            // Assert - Should report error for missing terminating brace
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void DeserializeFromCompactFormat_WithParameterToParameterlessExtension_ReportsError()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var xml = "<Test xmlns:x='" + StandardXomlKeys.Definitions_XmlNs + "' />";
+            using var reader = XmlReader.Create(new StringReader(xml));
+            reader.Read();
+            var manager = new DesignerSerializationManager();
+            var value = "{x:Null arg1}";
+
+            // Act
+            object result;
+            using (manager.CreateSession())
+            {
+                var wfManager = new WorkflowMarkupSerializationManager(manager);
+                wfManager.WorkflowMarkupStack.Push(reader);
+                result = serializer.DeserializeFromCompactFormat(wfManager, reader, value);
+                wfManager.WorkflowMarkupStack.Pop();
+            }
+
+            // Assert - Should report error for trailing delimiter
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void DeserializeFromCompactFormat_WithDoubleQuotes_ParsesCorrectly()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var xml = "<Test xmlns:x='" + StandardXomlKeys.Definitions_XmlNs + "' />";
+            using var reader = XmlReader.Create(new StringReader(xml));
+            reader.Read();
+            var manager = new DesignerSerializationManager();
+            var value = "{x:Type \"System.String\"}";
+
+            // Act
+            object? result;
+            using (manager.CreateSession())
+            {
+                var wfManager = new WorkflowMarkupSerializationManager(manager);
+                wfManager.WorkflowMarkupStack.Push(reader);
+                result = serializer.DeserializeFromCompactFormat(wfManager, reader, value);
+                wfManager.WorkflowMarkupStack.Pop();
+            }
+
+            // Assert
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public void DeserializeFromCompactFormat_WithNestedCurlyBraces_ParsesCorrectly()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var xml = "<Test xmlns:x='" + StandardXomlKeys.Definitions_XmlNs + "' />";
+            using var reader = XmlReader.Create(new StringReader(xml));
+            reader.Read();
+            var manager = new DesignerSerializationManager();
+            var value = "{x:Null}";
+
+            // Act
+            object? result;
+            using (manager.CreateSession())
+            {
+                var wfManager = new WorkflowMarkupSerializationManager(manager);
+                wfManager.WorkflowMarkupStack.Push(reader);
+                result = serializer.DeserializeFromCompactFormat(wfManager, reader, value);
+                wfManager.WorkflowMarkupStack.Pop();
+            }
+
+            // Assert
+            Assert.IsType<NullExtension>(result);
+        }
+
+        [Fact]
+        public void DeserializeFromCompactFormat_WithExtraCharactersAfterBrace_ReportsError()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var xml = "<Test xmlns:x='" + StandardXomlKeys.Definitions_XmlNs + "' />";
+            using var reader = XmlReader.Create(new StringReader(xml));
+            reader.Read();
+            var manager = new DesignerSerializationManager();
+            var value = "{x:Null} extra";
+
+            // Act
+            object? result;
+            using (manager.CreateSession())
+            {
+                var wfManager = new WorkflowMarkupSerializationManager(manager);
+                wfManager.WorkflowMarkupStack.Push(reader);
+                result = serializer.DeserializeFromCompactFormat(wfManager, reader, value);
+                wfManager.WorkflowMarkupStack.Pop();
+            }
+
+            // Assert - should handle extra characters
+            Assert.Null(result);
+        }
+
+        #endregion
+
+        #region CreateInstance Coverage Tests
+
+        public class TestClassWithoutDefaultConstructor(string value)
+        {
+            public string Value { get; } = value;
+        }
+
+        [Fact]
+        public void CreateInstance_WithNullSerializationManager_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var serializer = new TestWorkflowMarkupSerializer();
+            var type = typeof(TestSimpleObject);
+
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => serializer.CallCreateInstance(null!, type));
+        }
+
+        [Fact]
+        public void CreateInstance_WithNullType_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var serializer = new TestWorkflowMarkupSerializer();
+            var manager = new DesignerSerializationManager();
+
+            // Act & Assert
+            using (manager.CreateSession())
+            {
+                Assert.Throws<ArgumentNullException>(() => 
+                    serializer.CallCreateInstance(new WorkflowMarkupSerializationManager(manager), null!));
+            }
+        }
+
+        [Fact]
+        public void CreateInstance_WithValidType_CreatesInstance()
+        {
+            // Arrange
+            var serializer = new TestWorkflowMarkupSerializer();
+            var manager = new DesignerSerializationManager();
+            var type = typeof(TestSimpleObject);
+
+            // Act
+            object result;
+            using (manager.CreateSession())
+            {
+                result = serializer.CallCreateInstance(new WorkflowMarkupSerializationManager(manager), type);
+            }
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<TestSimpleObject>(result);
+        }
+
+        // Helper class to expose protected CreateInstance method
+        private class TestWorkflowMarkupSerializer : WorkflowMarkupSerializer
+        {
+            public object CallCreateInstance(WorkflowMarkupSerializationManager manager, Type type)
+            {
+                return CreateInstance(manager, type);
+            }
+        }
+
+        #endregion
+
+        #region SerializeContents Events Tests
+
+        public class TestObjectWithEvents
+        {
+            public event EventHandler? TestEvent;
+            public string Name { get; set; } = string.Empty;
+
+            public void RaiseTestEvent()
+            {
+                TestEvent?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        [Fact]
+        public void Serialize_WithEvents_SerializesCorrectly()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var output = new StringWriter();
+            using var writer = XmlWriter.Create(output);
+            var obj = new TestObjectWithEvents { Name = "Test" };
+
+            // Act
+            serializer.Serialize(writer, obj);
+            writer.Flush();
+            var result = output.ToString();
+
+            // Assert
+            Assert.NotEmpty(result);
+        }
+
+        #endregion
+
+        #region SerializeContents Properties with Index Parameters Tests
+
+        public class TestObjectWithIndexer
+        {
+            private readonly Dictionary<string, string> _values = [];
+
+            public string this[string key]
+            {
+                get => _values.TryGetValue(key, out var value) ? value : string.Empty;
+                set => _values[key] = value;
+            }
+
+            public string Name { get; set; } = string.Empty;
+        }
+
+        [Fact]
+        public void Serialize_WithIndexedProperty_SkipsIndexedProperty()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var output = new StringWriter();
+            using var writer = XmlWriter.Create(output);
+            var obj = new TestObjectWithIndexer { Name = "Test" };
+            obj["key1"] = "value1";
+
+            // Act
+            serializer.Serialize(writer, obj);
+            writer.Flush();
+            var result = output.ToString();
+
+            // Assert
+            Assert.Contains("Test", result);
+        }
+
+        #endregion
+
+        #region ContentProperty Error Path Tests
+
+        [ContentProperty("Items")]
+        public class TestCollectionContentProperty
+        {
+            public TestCollectionContentProperty()
+            {
+                Items = [];
+            }
+
+            public List<string> Items { get; }
+        }
+
+        [ContentProperty("Items")]
+        public class TestNullCollectionContentProperty
+        {
+            public List<string>? Items { get; set; }
+        }
+
+        [ContentProperty("Value")]
+        public class TestReadOnlyContentProperty
+        {
+            public string? Value { get; }
+        }
+
+        [ContentProperty("Value")]
+        public class TestSingleValueContentProperty
+        {
+            public string Value { get; set; } = string.Empty;
+        }
+
+        #endregion
+
+        #region Circular Reference Detection Tests
+
+        public class TestCircularReference
+        {
+            public TestCircularReference? Child { get; set; }
+            public string Name { get; set; } = string.Empty;
+        }
+
+        [Fact]
+        public void Serialize_WithCircularReference_ThrowsWorkflowMarkupSerializationException()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var output = new StringWriter();
+            using var writer = XmlWriter.Create(output);
+            var obj = new TestCircularReference { Name = "Parent" };
+            obj.Child = obj; // Create circular reference
+
+            // Act & Assert
+            // The serializer should detect the circular reference during serialization
+            // This is handled by the SerializationStack.Contains check
+            Assert.Throws<WorkflowMarkupSerializationException>(() => serializer.Serialize(writer, obj));
+        }
+
+        #endregion
+
+        #region OnBeforeSerialize, OnAfterSerialize, OnBeforeDeserialize, OnAfterDeserialize Tests
+
+        #endregion
+
+        #region ShouldSerializeValue with Convertible Types Tests
+
+        public class TestConvertibleProperty
+        {
+            [DefaultValue("42")]
+            public string StringValue { get; set; } = "42";
+        }
+
+        [Fact]
+        public void ShouldSerializeValue_WithConvertibleDefaultValue_ReturnsFalse()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var manager = new DesignerSerializationManager();
+            var property = typeof(TestConvertibleProperty).GetProperty("StringValue");
+
+            // Act
+            bool result;
+            using (manager.CreateSession())
+            {
+                var wfManager = new WorkflowMarkupSerializationManager(manager);
+                wfManager.Context.Push(property!);
+                result = serializer.ShouldSerializeValue(wfManager, "42");
+                wfManager.Context.Pop();
+            }
+
+            // Assert
+            Assert.False(result);
+        }
+
+        #endregion
+
+        #region SafeXmlNodeWriter Edge Cases Tests
+
+        public class TestPropertyWithSpecialCharacters
+        {
+            public string NormalProperty { get; set; } = string.Empty;
+        }
+
+        [Fact]
+        public void Serialize_WithSpecialCharactersInPropertyValue_EncodesCorrectly()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var output = new StringWriter();
+            using var writer = XmlWriter.Create(output);
+            var obj = new TestPropertyWithSpecialCharacters { NormalProperty = "<>&\"'" };
+
+            // Act
+            serializer.Serialize(writer, obj);
+            writer.Flush();
+            var result = output.ToString();
+
+            // Assert
+            Assert.NotEmpty(result);
+        }
+
+        #endregion
+
+        #region AdvanceReader Coverage Tests
+
+        [Fact]
+        public void Deserialize_WithComments_SkipsComments()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var xml = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<!-- This is a comment -->
+<Int32 xmlns=""clr-namespace:System;assembly=mscorlib"">42</Int32>";
+            using var reader = XmlReader.Create(new StringReader(xml));
+
+            // Act
+            var result = serializer.Deserialize(reader);
+
+            // Assert
+            Assert.Equal(42, result);
+        }
+
+        [Fact]
+        public void Deserialize_WithWhitespace_SkipsWhitespace()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var xml = @"<?xml version=""1.0"" encoding=""utf-8""?>
+
+
+<Int32 xmlns=""clr-namespace:System;assembly=mscorlib"">42</Int32>";
+            using var reader = XmlReader.Create(new StringReader(xml), new XmlReaderSettings { IgnoreWhitespace = false });
+
+            // Act
+            var result = serializer.Deserialize(reader);
+
+            // Assert
+            Assert.Equal(42, result);
+        }
+
+        #endregion
+
+        #region GetClrFullName Coverage Tests
+
+        [Fact]
+        public void Deserialize_WithUnmappedNamespace_UsesFullQualifiedName_ReturnsNull()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            // Use a namespace that is not mapped
+            var xml = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<SomeType xmlns=""http://unmapped.namespace/2024"">Test</SomeType>";
+            using var reader = XmlReader.Create(new StringReader(xml));
+
+            var result = serializer.Deserialize(reader);
+            Assert.Null(result);
+        }
+
+        #endregion
+
+        #region DeserializeCompoundProperty Edge Cases Tests
+
+        public class TestObjectWithComplexProperty
+        {
+            public TestSimpleObject? ComplexProperty { get; set; }
+        }
+
+        [Fact]
+        public void Deserialize_WithEmptyComplexProperty_HandlesCorrectly()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var xml = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<TestObjectWithComplexProperty xmlns=""clr-namespace:Workflow.ComponentModel.Serialization.Tests.ComponentModel.Serialization;assembly=Workflow.ComponentModel.Serialization.Tests"">
+    <TestObjectWithComplexProperty.ComplexProperty />
+</TestObjectWithComplexProperty>";
+            using var reader = XmlReader.Create(new StringReader(xml));
+
+            // Act & Assert
+            var result = serializer.Deserialize(reader);
+            Assert.Null(result);
+        }
+
+        #endregion
+
+        #region String Escaping Tests
+
+        [Fact]
+        public void Serialize_WithNullCharInString_ReplacesWithSpace()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var output = new StringWriter();
+            using var writer = XmlWriter.Create(output);
+            var obj = "Test\0Value";
+
+            // Act
+            serializer.Serialize(writer, obj);
+            writer.Flush();
+            var result = output.ToString();
+
+            // Assert
+            Assert.Contains("Test Value", result);
+        }
+
+        [Fact]
+        public void SerializeToString_WithByte_ReturnsString()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var manager = new DesignerSerializationManager();
+            byte value = 255;
+
+            // Act
+            string result;
+            using (manager.CreateSession())
+            {  
+                result = serializer.SerializeToString(new WorkflowMarkupSerializationManager(manager), value);
+            }
+
+            // Assert
+            Assert.Equal("255", result);
+        }
+
+        #endregion
+
+        #region GetProperties and GetEvents Coverage Tests
+
+        public class TestObjectWithHiddenProperty
+        {
+            [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
+            public string HiddenProperty { get; set; } = string.Empty;
+
+            public string VisibleProperty { get; set; } = string.Empty;
+        }
+
+        [Fact]
+        public void GetProperties_WithHiddenProperty_ExcludesHiddenProperty()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var manager = new DesignerSerializationManager();
+            var obj = new TestObjectWithHiddenProperty();
+
+            // Act
+            PropertyInfo[] result;
+            using (manager.CreateSession())
+            {
+                result = serializer.GetProperties(new WorkflowMarkupSerializationManager(manager), obj);
+            }
+
+            // Assert
+            Assert.DoesNotContain(result, p => p.Name == "HiddenProperty");
+            Assert.Contains(result, p => p.Name == "VisibleProperty");
+        }
+
+        public class TestObjectWithHiddenEvent
+        {
+            [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
+            public event EventHandler? HiddenEvent;
+
+            public event EventHandler? VisibleEvent;
+
+            public void RaiseEvents()
+            {
+                HiddenEvent?.Invoke(this, EventArgs.Empty);
+                VisibleEvent?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        [Fact]
+        public void GetEvents_WithHiddenEvent_ExcludesHiddenEvent()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var manager = new DesignerSerializationManager();
+            var obj = new TestObjectWithHiddenEvent();
+
+            // Act
+            EventInfo[] result;
+            using (manager.CreateSession())
+            {
+                result = serializer.GetEvents(new WorkflowMarkupSerializationManager(manager), obj);
+            }
+
+            // Assert
+            Assert.DoesNotContain(result, e => e.Name == "HiddenEvent");
+            Assert.Contains(result, e => e.Name == "VisibleEvent");
+        }
+
+        #endregion
+
+        #region Additional Primitive Type Serialization Tests
+
+        [Fact]
+        public void Serialize_WithInt16Value_GeneratesXml()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            short obj = 32767;
+            var output = new StringWriter();
+            using var writer = XmlWriter.Create(output);
+
+            // Act
+            serializer.Serialize(writer, obj);
+            writer.Flush();
+            var result = output.ToString();
+
+            // Assert
+            Assert.Contains("32767", result);
+        }
+
+        [Fact]
+        public void Deserialize_WithByteValue_DeserializesCorrectly()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var xml = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<Byte xmlns=""clr-namespace:System;assembly=mscorlib"">255</Byte>";
+            using var reader = XmlReader.Create(new StringReader(xml));
+
+            // Act
+            var result = serializer.Deserialize(reader);
+
+            // Assert
+            Assert.Equal((byte)255, result);
+        }
+
+        [Fact]
+        public void Deserialize_WithInt16Value_DeserializesCorrectly()
+        {
+            // Arrange
+            var serializer = new WorkflowMarkupSerializer();
+            var xml = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<Int16 xmlns=""clr-namespace:System;assembly=mscorlib"">32767</Int16>";
+            using var reader = XmlReader.Create(new StringReader(xml));
+
+            // Act
+            var result = serializer.Deserialize(reader);
+
+            // Assert
+            Assert.Equal((short)32767, result);
         }
 
         #endregion

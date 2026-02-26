@@ -39,16 +39,6 @@
         {
         }
 
-        protected WorkflowMarkupSerializationException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-            if (info == null)
-                throw new ArgumentNullException("info");
-
-            this.lineNumber = info.GetInt32("lineNumber");
-            this.columnNumber = info.GetInt32("columnNumber");
-        }
-
         public int LineNumber
         {
             get

@@ -1631,20 +1631,24 @@
             ArrayList argTokens;
             try
             {
-                argTokens = TokenizeAttributes(arguments);
+                IAttributesTokenizer attributesTokenizer = new AttributesTokenizer();
+                argTokens = attributesTokenizer.TokenizeAttributes(arguments);
             }
             catch (Exception error) when (!ExceptionUtility.IsCriticalException(error))
             {
                 serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_MarkupExtensionDeserializeFailed, attrValue, error.Message), reader));
                 return null;
             }
-            if (argTokens != null)
+            if (argTokens != null && argTokens.Count > 0)
             {
                 // Process the positional arugments and find the correct constructor to call.
                 ArrayList positionalArgs = [];
                 bool firstEqual = true;
                 for (int i = 0; i < argTokens.Count; i++)
                 {
+                    if (i > 0 && argTokens[i - 1] is char previousArgToken && previousArgToken == '=')
+                        continue;
+
                     char token = (argTokens[i] is char argToken) ? argToken : '\0';
                     if (token == '=')
                     {
@@ -1652,7 +1656,6 @@
                             positionalArgs.RemoveAt(positionalArgs.Count - 1);
                         firstEqual = false;
                         namedArgs.Add(argTokens[i - 1] as string, argTokens[i + 1] as string);
-                        i++;
                     }
                     if (token == ',')
                         continue;
@@ -1753,195 +1756,9 @@
             return obj;
         }
 
-        // This function splits the argument string into an array of tokens.
-        // For example: ID=Workflow1, Path=error1} would become an array that contains the following elements
-        // {ID} {=} {Workflwo1} {,} {Path} {=} {error1}
-        // Note that the input string should start with the first argument and end with '}'.
-        private ArrayList TokenizeAttributes(string args)
-        {
-            ArrayList list = null;
-            int length = args.Length;
-            bool inQuotes = false;
-            bool gotEscape = false;
-            bool nonWhitespaceFound = false;
-            Char quoteChar = '\'';
-            int leftCurlies = 0;
-            bool collectionIndexer = false;
-
-            StringBuilder stringBuilder = null;
-            int i = 0;
-
-            // Loop through the args, creating a list of arguments and known delimiters.
-            // This loop does limited syntax checking, and serves to tokenize the argument
-            // string into chunks that are validated in greater detail in the next phase.
-            for (; i < length; i++)
-            {
-                // Escape character is always in effect for everything inside
-                // a MarkupExtension.  We have to remember that the next character is 
-                // escaped, and is not treated as a quote or delimiter.
-                if (!gotEscape && args[i] == '\\')
-                {
-                    gotEscape = true;
-                    continue;
-                }
-
-                if (!nonWhitespaceFound && !Char.IsWhiteSpace(args[i]))
-                {
-                    nonWhitespaceFound = true;
-                }
-
-                // Process all characters that are not whitespace or are between quotes
-                if (inQuotes || leftCurlies > 0 || nonWhitespaceFound)
-                {
-                    // We have a non-whitespace character, so ensure we have
-                    // a string builder to accumulate characters and a list to collect
-                    // attributes and delimiters.  These are lazily
-                    // created so that simple cases that have no parameters do not
-                    // create any extra objects.
-                    if (stringBuilder == null)
-                    {
-                        stringBuilder = new StringBuilder(length);
-                        list = new ArrayList(1);
-                    }
-
-                    // If the character is escaped, then it is part of the attribute
-                    // being collected, regardless of its value and is not treated as
-                    // a delimiter or special character.  Write back the escape
-                    // character since downstream processing will need it to determine
-                    // whether the value is a MarkupExtension or not, and to prevent
-                    // multiple escapes from being lost by recursive processing.
-                    if (gotEscape)
-                    {
-                        stringBuilder.Append('\\');
-                        stringBuilder.Append(args[i]);
-                        gotEscape = false;
-                        continue;
-                    }
-
-                    // If this characters is not escaped, then look for quotes and
-                    // delimiters.
-                    if (inQuotes || leftCurlies > 0)
-                    {
-                        if (inQuotes && args[i] == quoteChar)
-                        {
-                            // If we're inside quotes, then only an end quote that is not
-                            // escaped is special, and will act as a delimiter.
-                            inQuotes = false;
-                            list.Add(stringBuilder.ToString());
-                            stringBuilder.Length = 0;
-                            nonWhitespaceFound = false;
-                        }
-                        else
-                        {
-                            if (leftCurlies > 0 && args[i] == '}')
-                            {
-                                leftCurlies--;
-                            }
-                            else if (args[i] == '{')
-                            {
-                                leftCurlies++;
-                            }
-                            stringBuilder.Append(args[i]);
-                        }
-                    }
-                    else
-                    {
-                        if (args[i] == '"' || args[i] == '\'')
-                        {
-                            // If we're not inside quotes, then a start quote can only
-                            // occur as the first non-whitespace character in a name or value.
-                            if (collectionIndexer && i < args.Length - 1 && args[i + 1] == ']')
-                            {
-                                collectionIndexer = false;
-                                stringBuilder.Append(args[i]);
-                            }
-                            else if (i > 0 && args[i - 1] == '[')
-                            {
-                                collectionIndexer = true;
-                                stringBuilder.Append(args[i]);
-                            }
-                            else
-                            {
-                                if (stringBuilder.Length != 0)
-                                    return null;
-
-                                inQuotes = true;
-                                quoteChar = args[i];
-                            }
-                        }
-                        else if (args[i] == ',' || args[i] == '=')
-                        {
-                            // If there is something in the stringbuilder, then store it
-                            if (stringBuilder != null && stringBuilder.Length > 0)
-                            {
-                                list.Add(stringBuilder.ToString().Trim());
-                                stringBuilder.Length = 0;
-                            }
-                            else if (list.Count == 0 || list[list.Count - 1] is Char)
-                            {
-                                // Can't have two delimiters in a row, so check what is on
-                                // the list and complain if the last item is a character, or if
-                                // a delimiter is the first item.
-                                return null;
-                            }
-
-                            // Append known delimiters.
-                            list.Add(args[i]);
-                            nonWhitespaceFound = false;
-                        }
-                        else if (args[i] == '}')
-                        {
-                            // If we hit the outside right curly brace, then end processing.  If
-                            // there is a delimiter on the top of the stack and we haven't
-                            // hit another non-whitespace character, then its an error
-                            if (stringBuilder != null)
-                            {
-                                if (stringBuilder.Length > 0)
-                                {
-                                    list.Add(stringBuilder.ToString().Trim());
-                                    stringBuilder.Length = 0;
-                                }
-                                else if (list.Count > 0 && (list[list.Count - 1] is Char))
-                                    return null;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            if (args[i] == '{')
-                            {
-                                leftCurlies++;
-                            }
-                            // Must just be a plain old character, so add it to the stringbuilder
-                            stringBuilder.Append(args[i]);
-                        }
-                    }
-                }
-
-            }
-
-
-            // If we've accumulated content but haven't hit a terminating '}' then the
-            // format is bad, so complain.
-            if (stringBuilder != null && stringBuilder.Length > 0)
-                throw new Exception(SR.GetString(SR.Error_MarkupExtensionMissingTerminatingCharacter));
-            else if (i < length)
-            {
-                // If there is non-whitespace text left that we haven't processes yet, 
-                // then there is junk after the closing '}', so complain
-                for (++i; i < length; i++)
-                {
-                    if (!Char.IsWhiteSpace(args[i]))
-                        throw new Exception(SR.GetString(SR.Error_ExtraCharacterFoundAtEnd));
-                }
-            }
-
-            return list;
-        }
-
         // Remove any '\' escape characters from the passed string.  This does a simple
         // pass through the string and won't do anything if there are no '\' characters.
-        private void RemoveEscapes(ref string value)
+        private static void RemoveEscapes(ref string value)
         {
             StringBuilder builder = null;
             bool noEscape = true;
@@ -1972,7 +1789,7 @@
 
         #region ContentProperty Support
         [ExcludeFromCodeCoverage]
-        private class ContentProperty : IDisposable
+        private sealed class ContentProperty : IDisposable
         {
             private readonly WorkflowMarkupSerializationManager serializationManager;
             private readonly WorkflowMarkupSerializer parentObjectSerializer;
@@ -1993,47 +1810,7 @@
                     this.contentPropertySerializer = this.serializationManager.GetSerializer(this.contentProperty.PropertyType, typeof(WorkflowMarkupSerializer)) as WorkflowMarkupSerializer;
                     if (this.contentPropertySerializer != null)
                     {
-                        try
-                        {
-                            XmlReader reader = this.serializationManager.WorkflowMarkupStack[typeof(XmlReader)] as XmlReader;
-                            object contentPropertyValue = null;
-                            if (reader == null)
-                            {
-                                contentPropertyValue = this.contentProperty.GetValue(this.parentObject, null);
-                            }
-                            else if (!this.contentProperty.PropertyType.IsValueType &&
-                                    !this.contentProperty.PropertyType.IsPrimitive &&
-                                    this.contentProperty.PropertyType != typeof(string) &&
-                                    !IsMarkupExtension(this.contentProperty.PropertyType) &&
-                                    this.contentProperty.CanWrite)
-                            {
-                                if (serializationManager.GetSerializer(this.contentProperty.PropertyType, typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer serializer)
-                                {
-                                    serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerNotAvailable, this.contentProperty.PropertyType.FullName), reader));
-                                    return;
-                                }
-                                try
-                                {
-                                    contentPropertyValue = serializer.CreateInstance(serializationManager, this.contentProperty.PropertyType);
-                                }
-                                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-                                {
-                                    serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerCreateInstanceFailed, this.contentProperty.PropertyType.FullName, e.Message), reader));
-                                    return;
-                                }
-                                this.contentProperty.SetValue(this.parentObject, contentPropertyValue, null);
-                            }
-
-                            if (contentPropertyValue != null && reader != null)
-                            {
-                                this.contentPropertySerializer.OnBeforeDeserialize(this.serializationManager, contentPropertyValue);
-                                this.contentPropertySerializer.OnBeforeDeserializeContents(this.serializationManager, contentPropertyValue);
-                            }
-                        }
-                        catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-                        {
-                            this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e));
-                        }
+                        InitializeContentPropertySerializer(serializationManager);
                     }
                     else
                     {
@@ -2042,9 +1819,70 @@
                 }
             }
 
-            void IDisposable.Dispose()
+            private void InitializeContentPropertySerializer(WorkflowMarkupSerializationManager serializationManager)
             {
-                if (this.serializationManager.WorkflowMarkupStack[typeof(XmlReader)] is XmlReader && this.contentProperty != null && this.contentPropertySerializer != null)
+                try
+                {
+                    XmlReader reader = this.serializationManager.WorkflowMarkupStack[typeof(XmlReader)] as XmlReader;
+                    object contentPropertyValue = null;
+                    if (reader == null)
+                    {
+                        contentPropertyValue = this.contentProperty.GetValue(this.parentObject, null);
+                    }
+                    else if (!this.contentProperty.PropertyType.IsValueType &&
+                            !this.contentProperty.PropertyType.IsPrimitive &&
+                            this.contentProperty.PropertyType != typeof(string) &&
+                            !IsMarkupExtensionType(this.contentProperty.PropertyType) &&
+                            this.contentProperty.CanWrite)
+                    {
+                        if (serializationManager.GetSerializer(this.contentProperty.PropertyType, typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer serializer)
+                        {
+                            serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerNotAvailable, this.contentProperty.PropertyType.FullName), reader));
+                            return;
+                        }
+                        try
+                        {
+                            contentPropertyValue = serializer.CreateInstance(serializationManager, this.contentProperty.PropertyType);
+                        }
+                        catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
+                        {
+                            serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerCreateInstanceFailed, this.contentProperty.PropertyType.FullName, e.Message), reader));
+                            return;
+                        }
+                        this.contentProperty.SetValue(this.parentObject, contentPropertyValue, null);
+                    }
+
+                    if (contentPropertyValue != null && reader != null)
+                    {
+                        this.contentPropertySerializer.OnBeforeDeserialize(this.serializationManager, contentPropertyValue);
+                        this.contentPropertySerializer.OnBeforeDeserializeContents(this.serializationManager, contentPropertyValue);
+                    }
+                }
+                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
+                {
+                    this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e));
+                }
+            }
+
+            private static bool IsMarkupExtensionType(Type type)
+            {
+                return (typeof(MarkupExtension).IsAssignableFrom(type) ||
+                        typeof(System.Type).IsAssignableFrom(type) ||
+                        typeof(System.Array).IsAssignableFrom(type));
+            }
+
+            public void Dispose()
+            {
+                Dispose(true);
+            }
+
+            private bool disposed;
+            private void Dispose(bool disposing)
+            {
+                if (this.disposed)
+                    return;
+
+                if (disposing && this.serializationManager.WorkflowMarkupStack[typeof(XmlReader)] is XmlReader && this.contentProperty != null && this.contentPropertySerializer != null)
                 {
                     try
                     {
@@ -2057,6 +1895,8 @@
                         this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e));
                     }
                 }
+
+                this.disposed = true;
             }
 
             internal PropertyInfo Property
@@ -2100,82 +1940,92 @@
                     object propertyValue = this.contentProperty.GetValue(this.parentObject, null);
                     if (CollectionMarkupSerializer.IsValidCollectionType(this.contentProperty.PropertyType))
                     {
-                        if (propertyValue == null)
-                        {
-                            this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_ContentPropertyCanNotBeNull, this.contentProperty.Name, this.parentObject.GetType().FullName)));
-                            return;
-                        }
-
-                        //Notify serializer about begining of deserialization process
-                        int i = 0;
-                        try
-                        {
-                            foreach (ContentInfo contentInfo in contents)
-                            {
-                                this.contentPropertySerializer.AddChild(this.serializationManager, propertyValue, contentInfo.Content);
-                                i++;
-                            }
-                        }
-                        catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-                        {
-                            this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e, contents[i].LineNumber, contents[i].LinePosition));
-                        }
+                        SetPropertyValueForCollection(contents, propertyValue);
                     }
                     else
                     {
-                        if (!this.contentProperty.CanWrite)
-                        {
-                            this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_ContentPropertyNoSetter, this.contentProperty.Name, this.parentObject.GetType()), contents[0].LineNumber, contents[0].LinePosition));
-                            return;
-                        }
-
-                        if (contents.Count > 1)
-                            this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_ContentPropertyNoMultipleContents, this.contentProperty.Name, this.parentObject.GetType()), contents[1].LineNumber, contents[1].LinePosition));
-
-                        object content = contents[0].Content;
-                        if (!this.contentProperty.PropertyType.IsAssignableFrom(content.GetType()) && typeof(string).IsAssignableFrom(content.GetType()))
-                        {
-                            try
-                            {
-                                content = this.contentPropertySerializer.DeserializeFromString(this.serializationManager, this.contentProperty.PropertyType, content as string);
-                                content = WorkflowMarkupSerializer.GetValueFromMarkupExtension(this.serializationManager, content);
-                            }
-                            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-                            {
-                                this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e, contents[0].LineNumber, contents[0].LinePosition));
-                                return;
-                            }
-                        }
-
-                        if (content == null)
-                        {
-                            this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_ContentCanNotBeConverted, content as string, contentProperty.Name, this.parentObject.GetType().FullName, this.contentProperty.PropertyType.FullName), contents[0].LineNumber, contents[0].LinePosition));
-                        }
-                        else if (!contentProperty.PropertyType.IsAssignableFrom(content.GetType()))
-                        {
-                            this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_ContentPropertyValueInvalid, content.GetType(), this.contentProperty.Name, this.contentProperty.PropertyType.FullName), contents[0].LineNumber, contents[0].LinePosition));
-                        }
-                        else
-                        {
-                            try
-                            {
-                                if (this.contentProperty.PropertyType == typeof(string))
-                                {
-                                    content = new WorkflowMarkupSerializer().DeserializeFromString(this.serializationManager, this.contentProperty.PropertyType, content as string);
-                                    content = WorkflowMarkupSerializer.GetValueFromMarkupExtension(this.serializationManager, content);
-                                }
-                                this.contentProperty.SetValue(this.parentObject, content, null);
-                            }
-                            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-                            {
-                                this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e, contents[0].LineNumber, contents[0].LinePosition));
-                            }
-                        }
+                        SetPropertyValueForObject(contents);
                     }
                 }
             }
 
-            private PropertyInfo GetContentProperty(WorkflowMarkupSerializationManager serializationManagerLocal, object parentObjectLocal)
+            private void SetPropertyValueForCollection(IList<ContentInfo> contents, object propertyValue)
+            {
+                if (propertyValue == null)
+                {
+                    this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_ContentPropertyCanNotBeNull, this.contentProperty.Name, this.parentObject.GetType().FullName)));
+                    return;
+                }
+
+                //Notify serializer about begining of deserialization process
+                int i = 0;
+                try
+                {
+                    foreach (ContentInfo contentInfo in contents)
+                    {
+                        this.contentPropertySerializer.AddChild(this.serializationManager, propertyValue, contentInfo.Content);
+                        i++;
+                    }
+                }
+                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
+                {
+                    this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e, contents[i].LineNumber, contents[i].LinePosition));
+                }
+            }
+
+            private void SetPropertyValueForObject(IList<ContentInfo> contents)
+            {
+                if (!this.contentProperty.CanWrite)
+                {
+                    this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_ContentPropertyNoSetter, this.contentProperty.Name, this.parentObject.GetType()), contents[0].LineNumber, contents[0].LinePosition));
+                    return;
+                }
+
+                if (contents.Count > 1)
+                    this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_ContentPropertyNoMultipleContents, this.contentProperty.Name, this.parentObject.GetType()), contents[1].LineNumber, contents[1].LinePosition));
+
+                object content = contents[0].Content;
+                if (!this.contentProperty.PropertyType.IsInstanceOfType(content) && content is string contentString)
+                {
+                    try
+                    {
+                        content = this.contentPropertySerializer.DeserializeFromString(this.serializationManager, this.contentProperty.PropertyType, contentString);
+                        content = WorkflowMarkupSerializer.GetValueFromMarkupExtension(this.serializationManager, content);
+                    }
+                    catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
+                    {
+                        this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e, contents[0].LineNumber, contents[0].LinePosition));
+                        return;
+                    }
+                }
+
+                if (content == null)
+                {
+                    this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_ContentCanNotBeConverted, content as string, contentProperty.Name, this.parentObject.GetType().FullName, this.contentProperty.PropertyType.FullName), contents[0].LineNumber, contents[0].LinePosition));
+                }
+                else if (!contentProperty.PropertyType.IsInstanceOfType(content))
+                {
+                    this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_ContentPropertyValueInvalid, content.GetType(), this.contentProperty.Name, this.contentProperty.PropertyType.FullName), contents[0].LineNumber, contents[0].LinePosition));
+                }
+                else
+                {
+                    try
+                    {
+                        if (this.contentProperty.PropertyType == typeof(string))
+                        {
+                            content = new WorkflowMarkupSerializer().DeserializeFromString(this.serializationManager, this.contentProperty.PropertyType, content as string);
+                            content = WorkflowMarkupSerializer.GetValueFromMarkupExtension(this.serializationManager, content);
+                        }
+                        this.contentProperty.SetValue(this.parentObject, content, null);
+                    }
+                    catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
+                    {
+                        this.serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, this.parentObject.GetType(), e.Message), e, contents[0].LineNumber, contents[0].LinePosition));
+                    }
+                }
+            }
+
+            private static PropertyInfo GetContentProperty(WorkflowMarkupSerializationManager serializationManagerLocal, object parentObjectLocal)
             {
                 PropertyInfo contentPropertyLocal = null;
 
@@ -2224,13 +2074,6 @@
             return typeName;
         }
 
-        private static bool IsMarkupExtension(Type type)
-        {
-            return (typeof(MarkupExtension).IsAssignableFrom(type) ||
-                    typeof(System.Type).IsAssignableFrom(type) ||
-                    typeof(System.Array).IsAssignableFrom(type));
-        }
-
         private static bool IsMarkupExtension(XmlQualifiedName xmlQualifiedName)
         {
             bool markupExtension = false;
@@ -2246,10 +2089,10 @@
         {
             if (value == null)
                 return new NullExtension();
-            if (value is System.Type)
-                return new TypeExtension(value as System.Type);
-            if (value is Array)
-                return new ArrayExtension(value as Array);
+            if (value is System.Type typeValue)
+                return new TypeExtension(typeValue);
+            if (value is Array arrayValue)
+                return new ArrayExtension(arrayValue);
 
             return value;
         }

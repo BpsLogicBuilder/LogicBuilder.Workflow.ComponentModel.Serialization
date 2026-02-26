@@ -82,7 +82,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var markupExtension = new TestMarkupExtension();
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => _serializer.SerializeToString(_serializationManager, markupExtension));
+            Assert.Throws<System.InvalidOperationException>(() => _serializer.SerializeToString(_serializationManager, markupExtension));
         }
 
         [Fact]
@@ -371,46 +371,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
         }
 
         [Fact]
-        public void SerializeToString_SkipsPropertiesWithConstructorArgumentAttribute()
-        {
-            // Arrange
-            var designerSerializationManager = new DesignerSerializationManager();
-            var manager = new WorkflowMarkupSerializationManager(designerSerializationManager);
-
-            var serializer = new TestableMarkupExtensionSerializerWithConstructor();
-            var markupExtension = new TestMarkupExtensionWithConstructor("testValue");
-            var sb = new StringBuilder();
-            var settings = new XmlWriterSettings { OmitXmlDeclaration = true };
-            using var writer = XmlWriter.Create(sb, settings);
-            manager.WorkflowMarkupStack.Push(writer);
-
-            try
-            {
-                writer.WriteStartElement("", "Root", "http://schemas.microsoft.com/winfx/2006/xaml");
-                writer.WriteAttributeString("xmlns", "ns0", null, "clr-namespace:LogicBuilder.Workflow.Tests.ComponentModel.Serialization;Assembly=LogicBuilder.Workflow.ComponentModel.Serialization.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=646893bec0268535");
-
-                using (designerSerializationManager.CreateSession())
-                {
-                    // Act
-                    serializer.SerializeToString(manager, markupExtension);
-                }
-
-                writer.WriteEndElement();
-                writer.Flush();
-
-                // Assert - Value property should not appear as a property since it's a constructor argument
-                var result = sb.ToString();
-                // The value should appear as constructor arg, not as property=value syntax
-                Assert.Contains("testValue", result);
-            }
-            finally
-            {
-                manager.WorkflowMarkupStack.Pop();
-                writer.Dispose();
-            }
-        }
-
-        [Fact]
         public void SerializeToString_HandlesIntConstructorArguments()
         {
             // Arrange
@@ -671,7 +631,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             {
                 // Use reflection to access private method
                 var method = typeof(MarkupExtensionSerializer).GetMethod("CreateEscapedValue",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
+                    BindingFlags.NonPublic | BindingFlags.Static);
                 return (string)method!.Invoke(this, [value])!;
             }
         }

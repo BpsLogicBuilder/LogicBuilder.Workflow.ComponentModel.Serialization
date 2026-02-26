@@ -15,8 +15,6 @@
     #region Class WorkflowMarkupSerializationManager
     public class WorkflowMarkupSerializationManager : IDesignerSerializationManager
     {
-        private Assembly localAssembly = null;
-        private int writerDepth = 0;
         private readonly ContextStack workflowMarkupStack = new();
         // Stack to keep a list of objects being serialized, to avoid stack overflow
         private readonly Stack serializationStack = new();
@@ -97,17 +95,7 @@
             this.serializationManager.RemoveSerializationProvider(provider);
         }
 
-        public Assembly LocalAssembly
-        {
-            get
-            {
-                return this.localAssembly;
-            }
-            set
-            {
-                this.localAssembly = value;
-            }
-        }
+        public Assembly LocalAssembly { get; set; } = null;
 
         #region Public Methods
         public virtual XmlQualifiedName GetXmlQualifiedName(Type type, out string prefix)
@@ -116,7 +104,7 @@
                 throw new ArgumentNullException("type");
 
             string typeNamespace = type.Namespace ?? String.Empty;
-            string assemblyName = (type.Assembly != null && type.Assembly != this.localAssembly) ? type.Assembly.FullName : String.Empty;
+            string assemblyName = (type.Assembly != null && type.Assembly != LocalAssembly) ? type.Assembly.FullName : String.Empty;
 
             int key = typeNamespace.GetHashCode() ^ assemblyName.GetHashCode();
             if (!this.clrNamespaceBasedMappings.TryGetValue(key, out WorkflowMarkupSerializerMapping mappingForType))
@@ -165,48 +153,7 @@
 
                 foreach (WorkflowMarkupSerializerMapping xmlnsMapping in xmlnsMappings)
                 {
-                    string assemblyName = xmlnsMapping.AssemblyName;
-                    string clrNamespace = xmlnsMapping.ClrNamespace;
-
-                    // append dot net namespace name
-                    string fullTypeName = xmlQualifiedName.Name;
-                    if (clrNamespace.Length > 0)
-                        fullTypeName = clrNamespace + "." + xmlQualifiedName.Name;
-
-                    // Work around  for component model assembly
-                    if (assemblyName.Equals(Assembly.GetExecutingAssembly().FullName, StringComparison.Ordinal))
-                    {
-                        resolvedType = Assembly.GetExecutingAssembly().GetType(fullTypeName);
-                    }
-                    else if (assemblyName.Length == 0)
-                    {
-                        if (this.localAssembly != null)
-                            resolvedType = this.localAssembly.GetType(fullTypeName);
-                    }
-                    else
-                    {
-                        string assemblyQualifiedName = fullTypeName;
-                        if (assemblyName.Length > 0)
-                            assemblyQualifiedName += (", " + assemblyName);
-
-                        // now grab the actual type
-                        try
-                        {
-                            resolvedType = GetType(assemblyQualifiedName);
-                        }
-                        catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
-                        {
-                            // Intentionally ignore non-critical exceptions when resolving the type.
-                            // Fallback logic below will handle the case where resolvedType remains null.
-                        }
-
-                        if (resolvedType == null)
-                        {
-                            resolvedType = GetType(fullTypeName);
-                            if (resolvedType != null && !resolvedType.AssemblyQualifiedName.Equals(assemblyQualifiedName, StringComparison.Ordinal))
-                                resolvedType = null;
-                        }
-                    }
+                    resolvedType = ResolveType(xmlQualifiedName, resolvedType, xmlnsMapping);
 
                     //We found the type
                     if (resolvedType != null)
@@ -214,6 +161,53 @@
                         cachedXmlQualifiedNameTypes[xmlQualifiedName] = resolvedType;
                         break;
                     }
+                }
+            }
+
+            return resolvedType;
+        }
+
+        private Type ResolveType(XmlQualifiedName xmlQualifiedName, Type resolvedType, WorkflowMarkupSerializerMapping xmlnsMapping)
+        {
+            string assemblyName = xmlnsMapping.AssemblyName;
+            string clrNamespace = xmlnsMapping.ClrNamespace;
+
+            // append dot net namespace name
+            string fullTypeName = clrNamespace.Length > 0 
+                ? clrNamespace + "." + xmlQualifiedName.Name 
+                : xmlQualifiedName.Name;
+
+            // Work around  for component model assembly
+            if (assemblyName.Equals(Assembly.GetExecutingAssembly().FullName, StringComparison.Ordinal))
+            {
+                resolvedType = Assembly.GetExecutingAssembly().GetType(fullTypeName);
+            }
+            else if (assemblyName.Length == 0 && LocalAssembly != null)
+            {
+                resolvedType = LocalAssembly.GetType(fullTypeName);
+            }
+            else
+            {
+                string assemblyQualifiedName = fullTypeName;
+                if (assemblyName.Length > 0)
+                    assemblyQualifiedName += (", " + assemblyName);
+
+                // now grab the actual type
+                try
+                {
+                    resolvedType = GetType(assemblyQualifiedName);
+                }
+                catch (Exception ex) when (!ExceptionUtility.IsCriticalException(ex))
+                {
+                    // Intentionally ignore non-critical exceptions when resolving the type.
+                    // Fallback logic below will handle the case where resolvedType remains null.
+                }
+
+                if (resolvedType == null)
+                {
+                    resolvedType = GetType(fullTypeName);
+                    if (resolvedType != null && !resolvedType.AssemblyQualifiedName.Equals(assemblyQualifiedName, StringComparison.Ordinal))
+                        resolvedType = null;
                 }
             }
 
@@ -292,17 +286,7 @@
         #endregion
 
         #region Helpers
-        internal int WriterDepth
-        {
-            get
-            {
-                return this.writerDepth;
-            }
-            set
-            {
-                this.writerDepth = value;
-            }
-        }
+        internal int WriterDepth { get; set; } = 0;
 
         internal ContextStack WorkflowMarkupStack
         {
@@ -403,9 +387,17 @@
             get { return this.serializationManager.Properties; }
         }
 
-        event ResolveNameEventHandler IDesignerSerializationManager.ResolveName { add { } remove { } }
+        event ResolveNameEventHandler IDesignerSerializationManager.ResolveName 
+        { 
+            add { this.serializationManager.ResolveName += value; } 
+            remove { this.serializationManager.ResolveName -= value; } 
+        }
 
-        event EventHandler IDesignerSerializationManager.SerializationComplete { add { } remove { } }
+        event EventHandler IDesignerSerializationManager.SerializationComplete 
+        { 
+            add { this.serializationManager.SerializationComplete += value; } 
+            remove { this.serializationManager.SerializationComplete -= value; } 
+        }
 
         void IDesignerSerializationManager.SetName(object instance, string name)
         {
