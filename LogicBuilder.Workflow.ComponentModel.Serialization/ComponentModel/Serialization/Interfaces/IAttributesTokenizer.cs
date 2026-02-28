@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace LogicBuilder.Workflow.ComponentModel.Serialization
+namespace LogicBuilder.Workflow.ComponentModel.Serialization.Interfaces
 {
     internal interface IAttributesTokenizer
     {

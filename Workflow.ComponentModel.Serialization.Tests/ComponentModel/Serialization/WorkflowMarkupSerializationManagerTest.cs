@@ -6,12 +6,9 @@ using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.Design;
 using System.ComponentModel.Design.Serialization;
 using System.Drawing;
-using System.Reflection;
 using System.Xml;
-using Xunit;
 
 namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 {

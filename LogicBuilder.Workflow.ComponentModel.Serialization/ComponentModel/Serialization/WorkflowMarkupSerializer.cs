@@ -1,27 +1,31 @@
 ﻿namespace LogicBuilder.Workflow.ComponentModel.Serialization
 {
-    using System.CodeDom;
-    using System.ComponentModel.Design.Serialization;
+    using LogicBuilder.ComponentModel.Design.Serialization;
     using LogicBuilder.Workflow.ComponentModel.Design;
+    using LogicBuilder.Workflow.ComponentModel.Serialization.Factories;
+    using LogicBuilder.Workflow.ComponentModel.Serialization.Interfaces;
     using System;
+    using System.CodeDom;
     using System.Collections;
     using System.Collections.Generic;
     using System.ComponentModel;
+    using System.ComponentModel.Design.Serialization;
     using System.Diagnostics;
+    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.IO;
-    using System.Reflection;
-    using System.Text;
-    using System.Xml;
-    using LogicBuilder.ComponentModel.Design.Serialization;
-    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
+    using System.Reflection;
+    using System.Xml;
 
     #region Class WorkflowMarkupSerializer
     //Main serialization class for persisting the XOML
     [DefaultSerializationProvider(typeof(WorkflowMarkupSerializationProvider))]
     public class WorkflowMarkupSerializer
     {
+        private readonly IFromCompactFormatDeserializer fromCompactFormatDeserializer = FromCompactFormatDeserializerFactory.Create(DependencyHelperFactory.Create());
+        private readonly ISimplePropertyDeserializer simplePropertyDeserializer = SimplePropertyDeserializerFactory.Create();
+        private readonly IWorkflowMarkupSerializationHelper workflowMarkupSerializationHelper = WorkflowMarkupSerializationHelperFactory.Create();
 
         #region Public Methods
         public object Deserialize(XmlReader reader)
@@ -279,7 +283,7 @@
                         serializationManager.Context.Push(property);
                         try
                         {
-                            DeserializeSimpleProperty(serializationManager, reader, obj, propVal);
+                            simplePropertyDeserializer.DeserializeSimpleProperty(serializationManager, reader, obj, propVal);
                         }
                         finally
                         {
@@ -999,7 +1003,7 @@
             }
             if (IsValidCompactAttributeFormat(value))
             {
-                propVal = DeserializeFromCompactFormat(serializationManager, reader, value);
+                propVal = fromCompactFormatDeserializer.DeserializeFromCompactFormat(serializationManager, reader, value);
             }
             else
             {
@@ -1375,7 +1379,7 @@
 
                 if (reader.NodeType == XmlNodeType.Text)
                 {
-                    this.DeserializeSimpleProperty(serializationManager, reader, obj, reader.Value);
+                    simplePropertyDeserializer.DeserializeSimpleProperty(serializationManager, reader, obj, reader.Value);
                 }
                 else
                 {
@@ -1387,8 +1391,8 @@
                         {
                             propValue = GetValueFromMarkupExtension(serializationManager, propValue);
 
-                            if (propValue != null && propValue.GetType() == typeof(string) && ((string)propValue).StartsWith("{}", StringComparison.Ordinal))
-                                propValue = ((string)propValue).Substring(2);
+                            if (propValue is string str && str.StartsWith("{}", StringComparison.Ordinal))
+                                propValue = str.Substring(2);
 
                             try
                             {
@@ -1403,78 +1407,6 @@
                 }
             }
         }
-
-        private void DeserializeSimpleProperty(WorkflowMarkupSerializationManager serializationManager, XmlReader reader, object obj, string value)
-        {
-            PropertyInfo property = serializationManager.Context.Current as PropertyInfo;
-            bool isReadOnly;
-            Type propertyType;
-            if (property != null)
-            {
-                propertyType = property.PropertyType;
-                isReadOnly = !property.CanWrite;
-            }
-            else
-            {
-                Debug.Assert(false);
-                return;
-            }
-
-            if (isReadOnly && !typeof(ICollection<string>).IsAssignableFrom(propertyType))
-            {
-                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerPrimitivePropertyReadOnly, [property.Name, property.Name, obj.GetType().FullName]), reader));
-                return;
-            }
-
-            DeserializeSimpleMember(serializationManager, propertyType, reader, obj, value);
-        }
-
-        private void DeserializeSimpleMember(WorkflowMarkupSerializationManager serializationManager, Type memberType, XmlReader reader, object obj, string value)
-        {
-            //Get the serializer for the member type
-            if (serializationManager.GetSerializer(memberType, typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer memberSerializer)
-            {
-                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerNotAvailable, memberType.FullName), reader));
-                return;
-            }
-
-            try
-            {
-                //Try to deserialize
-                object memberValue = memberSerializer.DeserializeFromString(serializationManager, memberType, value);
-                memberValue = GetValueFromMarkupExtension(serializationManager, memberValue);
-
-                if (serializationManager.Context.Current is PropertyInfo property)
-                {
-                    try
-                    {
-                        if (property.CanWrite)
-                        {
-                            property.SetValue(obj, memberValue, null);
-                        }
-                        else if (typeof(ICollection<string>).IsAssignableFrom(memberValue.GetType())
-                            && property.GetValue(obj, null) is ICollection<string> propVal 
-                            && memberValue is ICollection<string> deserializedValue)
-                        {
-                            foreach (string content in deserializedValue)
-                                propVal.Add(content);
-                        }
-                    }
-                    catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-                    {
-                        while (e is TargetInvocationException && e.InnerException != null)
-                            e = e.InnerException;
-                        serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerMemberSetFailed, [reader.LocalName, reader.Value, reader.LocalName, obj.GetType().FullName, e.Message]), e, reader));
-                    }
-                }
-            }
-            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-            {
-                while (e is TargetInvocationException && e.InnerException != null)
-                    e = e.InnerException;
-                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerMemberSetFailed, [reader.LocalName, reader.Value, reader.LocalName, obj.GetType().FullName, e.Message]), e, reader));
-            }
-        }
         #endregion
 
         #region DependencyProperty Support
@@ -1483,7 +1415,7 @@
         #region SafeXmlNodeWriter
         private sealed class SafeXmlNodeWriter : IDisposable
         {
-            private readonly XmlNodeType xmlNodeType = XmlNodeType.None;
+            private readonly XmlNodeType xmlNodeType;
             private readonly WorkflowMarkupSerializationManager serializationManager = null;
 
             public SafeXmlNodeWriter(WorkflowMarkupSerializationManager serializationManager, object owner, object property, XmlNodeType xmlNodeType)
@@ -1575,216 +1507,9 @@
 
         internal bool IsValidCompactAttributeFormat(string attributeValue)
         {
-            return (attributeValue.Length > 0 && attributeValue.StartsWith("{", StringComparison.Ordinal) && !attributeValue.StartsWith("{}", StringComparison.Ordinal) && attributeValue.EndsWith("}", StringComparison.Ordinal));
+            return this.workflowMarkupSerializationHelper.IsValidCompactAttributeFormat(attributeValue);
         }
 
-        // This function parses the data bind syntax (markup extension in xaml terms).  The syntax is:
-        // {ObjectTypeName arg1, arg2, name3=arg3, name4=arg4, ...}
-        // For example, an ActivityBind would have the syntax as the following:
-        // {wcm:ActivityBind ID=Workflow1, Path=error1}
-        // We also support positional arguments, so the above expression is equivalent to 
-        // {wcm:ActivityBind Workflow1, Path=error1} or {wcm:ActivityBind Workflow1, error1}
-        // Notice that the object must have the appropriate constructor to support positional arugments.
-        // There should be no constructors that takes the same number of arugments, regardless of their types.
-        internal object DeserializeFromCompactFormat(WorkflowMarkupSerializationManager serializationManager, XmlReader reader, string attrValue)
-        {
-            if (attrValue.Length == 0 || !attrValue.StartsWith("{", StringComparison.Ordinal) || !attrValue.EndsWith("}", StringComparison.Ordinal))
-            {
-                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.IncorrectSyntax, attrValue), reader));
-                return null;
-            }
-
-            // check for correct format:  typename name=value name=value
-            int argIndex = attrValue.IndexOf(" ", StringComparison.Ordinal);
-            if (argIndex == -1)
-                argIndex = attrValue.IndexOf("}", StringComparison.Ordinal);
-
-            string typename = attrValue.Substring(1, argIndex - 1).Trim();
-            string arguments = attrValue.Substring(argIndex + 1, attrValue.Length - (argIndex + 1));
-            // lookup the type of the target
-            string prefix = String.Empty;
-            int typeIndex = typename.IndexOf(":", StringComparison.Ordinal);
-            if (typeIndex >= 0)
-            {
-                prefix = typename.Substring(0, typeIndex);
-                typename = typename.Substring(typeIndex + 1);
-            }
-
-            if (reader == null)
-                throw new ArgumentNullException(nameof(reader));
-
-            Type type = serializationManager.GetType(new XmlQualifiedName(typename, reader.LookupNamespace(prefix)));
-            if (type == null && !typename.EndsWith("Extension", StringComparison.Ordinal))
-            {
-                typename += "Extension";
-                type = serializationManager.GetType(new XmlQualifiedName(typename, reader.LookupNamespace(prefix)));
-            }
-            if (type == null)
-            {
-                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_MarkupSerializerTypeNotResolved, typename), reader));
-                return null;
-            }
-
-            // Break apart the argument string.
-            object obj = null;
-            Dictionary<string, object> namedArgs = [];
-            ArrayList argTokens;
-            try
-            {
-                IAttributesTokenizer attributesTokenizer = new AttributesTokenizer();
-                argTokens = attributesTokenizer.TokenizeAttributes(arguments);
-            }
-            catch (Exception error) when (!ExceptionUtility.IsCriticalException(error))
-            {
-                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_MarkupExtensionDeserializeFailed, attrValue, error.Message), reader));
-                return null;
-            }
-            if (argTokens != null && argTokens.Count > 0)
-            {
-                // Process the positional arugments and find the correct constructor to call.
-                ArrayList positionalArgs = [];
-                bool firstEqual = true;
-                for (int i = 0; i < argTokens.Count; i++)
-                {
-                    if (i > 0 && argTokens[i - 1] is char previousArgToken && previousArgToken == '=')
-                        continue;
-
-                    char token = (argTokens[i] is char argToken) ? argToken : '\0';
-                    if (token == '=')
-                    {
-                        if (positionalArgs.Count > 0 && firstEqual)
-                            positionalArgs.RemoveAt(positionalArgs.Count - 1);
-                        firstEqual = false;
-                        namedArgs.Add(argTokens[i - 1] as string, argTokens[i + 1] as string);
-                    }
-                    if (token == ',')
-                        continue;
-
-                    if (namedArgs.Count == 0)
-                        positionalArgs.Add(argTokens[i] as string);
-                }
-
-                if (positionalArgs.Count > 0)
-                {
-                    ConstructorInfo matchConstructor = null;
-                    ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                    ParameterInfo[] matchParameters = null;
-                    foreach (ConstructorInfo ctor in constructors)
-                    {
-                        ParameterInfo[] parameters = ctor.GetParameters();
-                        if (parameters.Length == positionalArgs.Count)
-                        {
-                            matchConstructor = ctor;
-                            matchParameters = parameters;
-                            break;
-                        }
-                    }
-
-                    if (matchConstructor != null)
-                    {
-                        for (int i = 0; i < positionalArgs.Count; i++)
-                        {
-                            positionalArgs[i] = XmlConvert.DecodeName((string)positionalArgs[i]);
-                            string argVal = (string)positionalArgs[i];
-                            RemoveEscapes(ref argVal);
-                            positionalArgs[i] = InternalDeserializeFromString(serializationManager, matchParameters[i].ParameterType, argVal);
-                            positionalArgs[i] = GetValueFromMarkupExtension(serializationManager, positionalArgs[i]);
-                        }
-
-                        obj = Activator.CreateInstance(type, positionalArgs.ToArray());
-                    }
-                }
-                else
-                    obj = Activator.CreateInstance(type);
-            }
-            else
-                obj = Activator.CreateInstance(type);
-
-            if (obj == null)
-            {
-                serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_CantCreateInstanceOfBaseType, type.FullName), reader));
-                return null;
-            }
-
-            if (namedArgs.Count > 0)
-            {
-                if (serializationManager.GetSerializer(obj.GetType(), typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer serializer)
-                {
-                    serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerNotAvailable, obj.GetType().FullName), reader));
-                    return obj;
-                }
-                List<PropertyInfo> properties = [];
-                try
-                {
-                    properties.AddRange(serializer.GetProperties(serializationManager, obj));
-                    properties.AddRange(serializationManager.GetExtendedProperties(obj));
-                }
-                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-                {
-                    serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e, reader));
-                    return obj;
-                }
-
-                foreach (string key in namedArgs.Keys)
-                {
-                    string argName = key;
-                    string argVal = namedArgs[key] as string;
-                    RemoveEscapes(ref argName);
-                    RemoveEscapes(ref argVal);
-
-                    PropertyInfo property = WorkflowMarkupSerializer.LookupProperty(properties, argName);
-                    if (property != null)
-                    {
-                        serializationManager.Context.Push(property);
-                        try
-                        {
-                            DeserializeSimpleProperty(serializationManager, reader, obj, argVal);
-                        }
-                        finally
-                        {
-                            Debug.Assert((PropertyInfo)serializationManager.Context.Current == property, "Serializer did not remove an object it pushed into stack.");
-                            serializationManager.Context.Pop();
-                        }
-                    }
-                    else
-                    {
-                        serializationManager.ReportError(CreateSerializationError(SR.GetString(SR.Error_SerializerPrimitivePropertyNoLogic, [argName, argName, obj.GetType().FullName]), reader));
-                    }
-                }
-            }
-
-            return obj;
-        }
-
-        // Remove any '\' escape characters from the passed string.  This does a simple
-        // pass through the string and won't do anything if there are no '\' characters.
-        private static void RemoveEscapes(ref string value)
-        {
-            StringBuilder builder = null;
-            bool noEscape = true;
-            for (int i = 0; i < value.Length; i++)
-            {
-                if (noEscape && value[i] == '\\')
-                {
-                    if (builder == null)
-                    {
-                        builder = new StringBuilder(value.Length);
-                        builder.Append(value.Substring(0, i));
-                    }
-                    noEscape = false;
-                }
-                else if (builder != null)
-                {
-                    builder.Append(value[i]);
-                    noEscape = true;
-                }
-            }
-
-            if (builder != null)
-            {
-                value = builder.ToString();
-            }
-        }
         #endregion
 
         #region ContentProperty Support

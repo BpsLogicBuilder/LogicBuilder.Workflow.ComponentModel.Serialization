@@ -1,5 +1,7 @@
 ﻿namespace LogicBuilder.Workflow.ComponentModel.Serialization
 {
+    using LogicBuilder.Workflow.ComponentModel.Serialization.Factories;
+    using LogicBuilder.Workflow.ComponentModel.Serialization.Interfaces;
     using System;
     using System.Collections.Generic;
     using System.Reflection;
@@ -7,6 +9,8 @@
 
     internal sealed class StringCollectionMarkupSerializer : WorkflowMarkupSerializer
     {
+        private readonly IFromCompactFormatDeserializer fromCompactFormatDeserializer = FromCompactFormatDeserializerFactory.Create(DependencyHelperFactory.Create());
+
         protected internal override PropertyInfo[] GetProperties(WorkflowMarkupSerializationManager serializationManager, object obj)
         {
             return new PropertyInfo[] { };
@@ -46,7 +50,7 @@
             // handle cannot begin with a * because it won't be a language independent
             // identifier :) )
             return IsValidCompactAttributeFormat(value)
-                ? DeserializeFromCompactFormat(serializationManager, serializationManager.WorkflowMarkupStack[typeof(XmlReader)] as XmlReader, value)
+                ? fromCompactFormatDeserializer.DeserializeFromCompactFormat(serializationManager, serializationManager.WorkflowMarkupStack[typeof(XmlReader)] as XmlReader, value)
                 : SynchronizationHandlesTypeConverter.UnStringify(value);
         }
     }
