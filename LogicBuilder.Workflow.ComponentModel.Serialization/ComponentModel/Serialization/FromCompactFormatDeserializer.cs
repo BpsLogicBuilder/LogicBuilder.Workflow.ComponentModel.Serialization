@@ -78,14 +78,9 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
                 serializationManager.ReportError(serializationErrorHelper.CreateSerializationError(SR.GetString(SR.Error_MarkupExtensionDeserializeFailed, attrValue, error.Message), reader));
                 return null;
             }
-            if (argTokens != null && argTokens.Count > 0)
-            {
-                obj = DeserializeArgumentsFromCompactFormat(serializationManager, type, obj, namedArgs, argTokens);
-            }
-            else
-            {
-                obj = Activator.CreateInstance(type);
-            }
+            obj = argTokens?.Count > 0
+                ? DeserializeArgumentsFromCompactFormat(serializationManager, type, obj, namedArgs, argTokens)
+                : Activator.CreateInstance(type);
 
             if (obj == null)
             {
@@ -109,14 +104,9 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
                 UpdateArguments(namedArgs, argTokens, positionalArgs, ref firstEqual, i);
             }
 
-            if (positionalArgs.Count > 0)
-            {
-                obj = DeserializePositionalArgumentsFromCompactFormat(serializationManager, type, obj, positionalArgs);
-            }
-            else
-            {
-                obj = Activator.CreateInstance(type);
-            }
+            obj = positionalArgs.Count > 0
+                ? DeserializePositionalArgumentsFromCompactFormat(serializationManager, type, obj, positionalArgs)
+                : Activator.CreateInstance(type);
 
             return obj;
         }
