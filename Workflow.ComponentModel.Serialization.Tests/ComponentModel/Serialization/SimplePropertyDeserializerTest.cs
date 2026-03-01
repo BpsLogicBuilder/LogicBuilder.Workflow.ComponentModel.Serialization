@@ -345,12 +345,16 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
         private class TestClassWithExceptionProperty
         {
-            private readonly string _throwingProperty = "";
+            private string _throwingProperty = "";
             
             public string ThrowingProperty
             {
                 get => _throwingProperty;
-                set => throw new InvalidOperationException("Property setter always throws");
+                set
+                {
+                    _throwingProperty = value; // Explicitly acknowledge the incoming value before throwing
+                    throw new InvalidOperationException("Property setter always throws");
+                }
             }
         }
 
