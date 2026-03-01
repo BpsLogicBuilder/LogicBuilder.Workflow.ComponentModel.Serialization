@@ -1,4 +1,5 @@
-using LogicBuilder.Workflow.ComponentModel.Serialization;
+using LogicBuilder.Workflow.ComponentModel.Serialization.Factories;
+using LogicBuilder.Workflow.ComponentModel.Serialization.Interfaces;
 using System;
 using System.Collections;
 
@@ -6,11 +7,11 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 {
     public class AttributesTokenizerTest
     {
-        private readonly AttributesTokenizer _tokenizer;
+        private readonly IAttributesTokenizer _tokenizer;
 
         public AttributesTokenizerTest()
         {
-            _tokenizer = new AttributesTokenizer();
+            _tokenizer = AttributesTokenizerFactory.Create();
         }
 
         #region Basic Tokenization Tests
