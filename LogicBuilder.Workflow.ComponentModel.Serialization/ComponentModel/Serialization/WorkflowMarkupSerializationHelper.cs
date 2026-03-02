@@ -4,11 +4,42 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Xml;
 
 namespace LogicBuilder.Workflow.ComponentModel.Serialization
 {
     internal class WorkflowMarkupSerializationHelper : IWorkflowMarkupSerializationHelper
     {
+        public void AdvanceReader(XmlReader reader)
+        {
+            //Compressed what process mapping pi used to do
+            while (reader.NodeType != XmlNodeType.EndElement 
+                && reader.NodeType != XmlNodeType.Element 
+                && reader.NodeType != XmlNodeType.Text && reader.Read())
+            {
+                // Just keep reading until we find an element, text, or end element.
+            }
+        }
+
+        public object CreateInstance(Type type)
+        {
+            if (type == null)
+                throw new ArgumentNullException("type");
+
+            return Activator.CreateInstance(type);
+        }
+
+        public bool IsMarkupExtension(XmlQualifiedName xmlQualifiedName)
+        {
+            bool markupExtension = false;
+            if (xmlQualifiedName.Namespace.Equals(StandardXomlKeys.Definitions_XmlNs, StringComparison.Ordinal)
+                && (xmlQualifiedName.Name.Equals(typeof(Array).Name) || string.Equals(xmlQualifiedName.Name, "Null", StringComparison.Ordinal) || string.Equals(xmlQualifiedName.Name, typeof(NullExtension).Name, StringComparison.Ordinal) || string.Equals(xmlQualifiedName.Name, "Type", StringComparison.Ordinal) || string.Equals(xmlQualifiedName.Name, typeof(TypeExtension).Name, StringComparison.Ordinal)))
+            {
+                markupExtension = true;
+            }
+            return markupExtension;
+        }
+
         public bool IsValidCompactAttributeFormat(string attributeValue)
         {
             return attributeValue.Length > 0 && attributeValue.StartsWith("{", StringComparison.Ordinal) && !attributeValue.StartsWith("{}", StringComparison.Ordinal) && attributeValue.EndsWith("}", StringComparison.Ordinal);

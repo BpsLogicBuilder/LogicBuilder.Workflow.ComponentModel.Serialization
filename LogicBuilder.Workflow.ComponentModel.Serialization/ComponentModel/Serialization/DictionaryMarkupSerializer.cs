@@ -22,6 +22,9 @@
                 childEntries.Add(dictionaryEntry);
             }
             return childEntries;
+            /*using generics here would lead to incorrect results. 
+             * e.g. ArrayList childEntries = [.. dictionary.Cast<DictionaryEntry>()]
+             * return childEntries*/
         }
 
         protected internal override PropertyInfo[] GetProperties(WorkflowMarkupSerializationManager serializationManager, object obj)
@@ -101,7 +104,7 @@
             this.deserializingDictionary = true;
         }
 
-        protected override void OnAfterDeserialize(WorkflowMarkupSerializationManager serializationManager, object obj)
+        protected internal override void OnAfterDeserialize(WorkflowMarkupSerializationManager serializationManager, object obj)
         {
             base.OnAfterDeserialize(serializationManager, obj);
 

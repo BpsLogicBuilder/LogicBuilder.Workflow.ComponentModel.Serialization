@@ -1,7 +1,5 @@
 using LogicBuilder.ComponentModel.Design.Serialization;
 using LogicBuilder.Workflow.ComponentModel.Serialization;
-using LogicBuilder.Workflow.ComponentModel.Serialization.Factories;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -883,7 +881,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             // Act & Assert
             using (manager.CreateSession())
             {
-                Assert.Throws<Exception>(() => 
+                Assert.Throws<InvalidOperationException>(() => 
                     serializer.AddChild(new WorkflowMarkupSerializationManager(manager), parent, child));
             }
         }
