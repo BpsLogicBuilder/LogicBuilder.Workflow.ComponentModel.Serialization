@@ -24,6 +24,7 @@
     public class WorkflowMarkupSerializer
     {
         private readonly IFromCompactFormatDeserializer fromCompactFormatDeserializer = FromCompactFormatDeserializerFactory.Create(DependencyHelperFactory.Create());
+        private readonly IObjectDeserializer objectDeserializer = ObjectDeserializerFactory.Create();
         private readonly ISimplePropertyDeserializer simplePropertyDeserializer = SimplePropertyDeserializerFactory.Create();
         private readonly IWorkflowMarkupSerializationHelper workflowMarkupSerializationHelper = WorkflowMarkupSerializationHelperFactory.Create();
 
@@ -140,6 +141,7 @@
         #region Protected Methods (Non-overridable)
         internal object DeserializeObject(WorkflowMarkupSerializationManager serializationManager, XmlReader reader)
         {
+            //return objectDeserializer.DeserializeObject(serializationManager, reader);
             if (serializationManager == null)
                 throw new ArgumentNullException("serializationManager");
             if (reader == null)
@@ -907,7 +909,7 @@
         {
         }
 
-        protected virtual void OnBeforeDeserialize(WorkflowMarkupSerializationManager serializationManager, object obj)
+        protected internal virtual void OnBeforeDeserialize(WorkflowMarkupSerializationManager serializationManager, object obj)
         {
         }
 
@@ -916,7 +918,7 @@
 
         }
 
-        protected virtual void OnAfterDeserialize(WorkflowMarkupSerializationManager serializationManager, object obj)
+        protected internal virtual void OnAfterDeserialize(WorkflowMarkupSerializationManager serializationManager, object obj)
         {
         }
 
@@ -1357,13 +1359,11 @@
             }
             else if (!reader.IsEmptyElement)
             {
-                //
                 if (reader.HasAttributes)
                 {
                     //We allow xmlns on the complex property nodes
                     while (reader.MoveToNextAttribute())
                     {
-                        // 
                         if (string.Equals(reader.LocalName, "xmlns", StringComparison.Ordinal) || string.Equals(reader.Prefix, "xmlns", StringComparison.Ordinal))
                             continue;
                         else
