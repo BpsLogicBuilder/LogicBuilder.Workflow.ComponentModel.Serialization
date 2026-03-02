@@ -255,7 +255,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
                 _workflowMarkupSerializationHelper);
 
             // Act
-            var contents = contentProperty.GetContents() as List<string>;
+            var contents = (List<string>)contentProperty.GetContents();
 
             // Assert
             Assert.NotNull(contents);
@@ -612,7 +612,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
 
                 // Act
                 contentProperty.SetContents(originalContents);
-                var retrievedContents = contentProperty.GetContents() as List<TestObject>;
+                var retrievedContents = (List<TestObject>)contentProperty.GetContents();
 
                 // Assert
                 Assert.NotNull(retrievedContents);
