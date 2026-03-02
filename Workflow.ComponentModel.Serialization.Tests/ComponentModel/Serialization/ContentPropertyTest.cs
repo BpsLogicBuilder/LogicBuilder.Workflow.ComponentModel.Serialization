@@ -620,8 +620,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
                 Assert.Equal("item1", retrievedContents[0].Name);
                 Assert.Equal("item2", retrievedContents[1].Name);
             }
-
-           //_serializationManager.WorkflowMarkupStack.Pop();
         }
 
         #endregion

@@ -68,7 +68,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
                         !IsMarkupExtensionType(this.contentProperty.PropertyType) &&
                         this.contentProperty.CanWrite)
                 {
-                    if (serializationManager.GetSerializer(this.contentProperty.PropertyType, typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer serializer)
+                    if (serializationManager.GetSerializer(this.contentProperty.PropertyType, typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer)
                     {
                         serializationManager.ReportError(serializationErrorHelper.CreateSerializationError(SR.GetString(SR.Error_SerializerNotAvailable, this.contentProperty.PropertyType.FullName), reader));
                         return;
