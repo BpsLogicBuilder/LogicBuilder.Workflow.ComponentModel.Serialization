@@ -296,7 +296,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
             }
             catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
             {
-                serializationManager.ReportError(serializationErrorHelper.CreateSerializationError(SR.GetString(SR.Error_SerializerCreateInstanceFailed, e.Message), reader));
+                serializationManager.ReportError(serializationErrorHelper.CreateSerializationError(SR.GetString(SR.Error_SerializerCreateInstanceFailed, type, e.Message), reader));
                 return null;
             }
 

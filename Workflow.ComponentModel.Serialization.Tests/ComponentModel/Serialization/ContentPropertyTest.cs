@@ -5,8 +5,6 @@ using LogicBuilder.Workflow.ComponentModel.Serialization.Interfaces;
 using LogicBuilder.Workflow.ComponentModel.Serialization.Structures;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.Design.Serialization;
 using System.IO;
 using System.Xml;
 
@@ -107,6 +105,32 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             public string Name { get; set; } = string.Empty;
         }
 
+        [ContentProperty("NestedObject")]
+        public class TestContainerWithWritableObjectProperty
+        {
+            public TestNestedObject? NestedObject { get; set; }
+        }
+
+        [ContentProperty("IntValue")]
+        public class TestContainerWithIntProperty
+        {
+            public int IntValue { get; set; }
+        }
+
+        [ContentProperty("Extension")]
+        public class TestContainerWithMarkupExtension
+        {
+            public MarkupExtension? Extension { get; set; }
+        }
+
+        public class TestMarkupExtension : MarkupExtension
+        {
+            public override object ProvideValue(IServiceProvider provider)
+            {
+                return "test";
+            }
+        }
+
         #endregion
 
         #region Constructor Tests
@@ -201,6 +225,171 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
                 // Assert
                 Assert.NotEmpty(_designerSerializationManager.Errors);
             }
+        }
+
+        [Fact]
+        public void Constructor_WithXmlReaderAndWritableObjectProperty_CreatesInstance()
+        {
+            // Arrange
+            var parentObject = new TestContainerWithWritableObjectProperty();
+            var parentSerializer = new WorkflowMarkupSerializer();
+            var xml = "<TestContainerWithWritableObjectProperty><NestedObject><Name>test</Name></NestedObject></TestContainerWithWritableObjectProperty>";
+
+            using var stringReader = new StringReader(xml);
+            using var xmlReader = XmlReader.Create(stringReader);
+            
+            _serializationManager.WorkflowMarkupStack.Push(xmlReader);
+
+            using (_designerSerializationManager.CreateSession())
+            {
+                // Act
+                using var contentProperty = new ContentProperty(
+                    _serializationManager,
+                    parentSerializer,
+                    parentObject,
+                    _deserializeFromStringHelper,
+                    _markupExtensionHelper,
+                    _serializationErrorHelper,
+                    _workflowMarkupSerializationHelper);
+
+                // Assert
+                Assert.NotNull(contentProperty);
+                Assert.NotNull(parentObject.NestedObject);
+            }
+
+            _serializationManager.WorkflowMarkupStack.Pop();
+        }
+
+        [Fact]
+        public void Constructor_WithXmlReaderAndValueType_DoesNotCreateInstance()
+        {
+            // Arrange
+            var parentObject = new TestContainerWithIntProperty();
+            var parentSerializer = new WorkflowMarkupSerializer();
+            var xml = "<TestContainerWithIntProperty><IntValue>42</IntValue></TestContainerWithIntProperty>";
+
+            using var stringReader = new StringReader(xml);
+            using var xmlReader = XmlReader.Create(stringReader);
+            
+            _serializationManager.WorkflowMarkupStack.Push(xmlReader);
+
+            using (_designerSerializationManager.CreateSession())
+            {
+                // Act
+                using var contentProperty = new ContentProperty(
+                    _serializationManager,
+                    parentSerializer,
+                    parentObject,
+                    _deserializeFromStringHelper,
+                    _markupExtensionHelper,
+                    _serializationErrorHelper,
+                    _workflowMarkupSerializationHelper);
+
+                // Assert
+                Assert.NotNull(contentProperty);
+                Assert.Equal(0, parentObject.IntValue); // Not initialized
+            }
+
+            _serializationManager.WorkflowMarkupStack.Pop();
+        }
+
+        [Fact]
+        public void Constructor_WithXmlReaderAndStringProperty_DoesNotCreateInstance()
+        {
+            // Arrange
+            var parentObject = new TestContainerWithSimpleProperty();
+            var parentSerializer = new WorkflowMarkupSerializer();
+            var xml = "<TestContainerWithSimpleProperty><Value>test</Value></TestContainerWithSimpleProperty>";
+
+            using var stringReader = new StringReader(xml);
+            using var xmlReader = XmlReader.Create(stringReader);
+            
+            _serializationManager.WorkflowMarkupStack.Push(xmlReader);
+
+            using (_designerSerializationManager.CreateSession())
+            {
+                // Act
+                using var contentProperty = new ContentProperty(
+                    _serializationManager,
+                    parentSerializer,
+                    parentObject,
+                    _deserializeFromStringHelper,
+                    _markupExtensionHelper,
+                    _serializationErrorHelper,
+                    _workflowMarkupSerializationHelper);
+
+                // Assert
+                Assert.NotNull(contentProperty);
+                Assert.Equal(string.Empty, parentObject.Value);
+            }
+
+            _serializationManager.WorkflowMarkupStack.Pop();
+        }
+
+        [Fact]
+        public void Constructor_WithXmlReaderAndMarkupExtensionProperty_DoesNotCreateInstance()
+        {
+            // Arrange
+            var parentObject = new TestContainerWithMarkupExtension();
+            var parentSerializer = new WorkflowMarkupSerializer();
+            var xml = "<TestContainerWithMarkupExtension><Extension /></TestContainerWithMarkupExtension>";
+
+            using var stringReader = new StringReader(xml);
+            using var xmlReader = XmlReader.Create(stringReader);
+            
+            _serializationManager.WorkflowMarkupStack.Push(xmlReader);
+
+            using (_designerSerializationManager.CreateSession())
+            {
+                // Act
+                using var contentProperty = new ContentProperty(
+                    _serializationManager,
+                    parentSerializer,
+                    parentObject,
+                    _deserializeFromStringHelper,
+                    _markupExtensionHelper,
+                    _serializationErrorHelper,
+                    _workflowMarkupSerializationHelper);
+
+                // Assert
+                Assert.NotNull(contentProperty);
+                Assert.Null(parentObject.Extension);
+            }
+
+            _serializationManager.WorkflowMarkupStack.Pop();
+        }
+
+        [Fact]
+        public void Constructor_WithXmlReaderAndReadOnlyProperty_DoesNotCreateInstance()
+        {
+            // Arrange
+            var parentObject = new TestContainerWithReadOnlyProperty();
+            var parentSerializer = new WorkflowMarkupSerializer();
+            var xml = "<TestContainerWithReadOnlyProperty><ReadOnlyValue>test</ReadOnlyValue></TestContainerWithReadOnlyProperty>";
+
+            using var stringReader = new StringReader(xml);
+            using var xmlReader = XmlReader.Create(stringReader);
+            
+            _serializationManager.WorkflowMarkupStack.Push(xmlReader);
+
+            using (_designerSerializationManager.CreateSession())
+            {
+                // Act
+                using var contentProperty = new ContentProperty(
+                    _serializationManager,
+                    parentSerializer,
+                    parentObject,
+                    _deserializeFromStringHelper,
+                    _markupExtensionHelper,
+                    _serializationErrorHelper,
+                    _workflowMarkupSerializationHelper);
+
+                // Assert
+                Assert.NotNull(contentProperty);
+                Assert.Equal(string.Empty, parentObject.ReadOnlyValue);
+            }
+
+            _serializationManager.WorkflowMarkupStack.Pop();
         }
 
         #endregion
@@ -494,6 +683,102 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             }
         }
 
+        [Fact]
+        public void SetContents_WithObjectPropertyAndNullContent_ReportsError()
+        {
+            // Arrange
+            var parentObject = new TestContainerWithObjectProperty();
+            var parentSerializer = new WorkflowMarkupSerializer();
+
+            using var contentProperty = new ContentProperty(
+                _serializationManager,
+                parentSerializer,
+                parentObject,
+                _deserializeFromStringHelper,
+                _markupExtensionHelper,
+                _serializationErrorHelper,
+                _workflowMarkupSerializationHelper);
+
+            var contents = new List<ContentInfo>
+            {
+                new(null, 1, 1)
+            };
+
+            using (_designerSerializationManager.CreateSession())
+            {
+                // Act
+                contentProperty.SetContents(contents);
+
+                // Assert
+                Assert.NotEmpty(_designerSerializationManager.Errors);
+            }
+        }
+
+        [Fact]
+        public void SetContents_WithObjectPropertyAndWrongType_ReportsError()
+        {
+            // Arrange
+            var parentObject = new TestContainerWithObjectProperty();
+            var parentSerializer = new WorkflowMarkupSerializer();
+
+            using var contentProperty = new ContentProperty(
+                _serializationManager,
+                parentSerializer,
+                parentObject,
+                _deserializeFromStringHelper,
+                _markupExtensionHelper,
+                _serializationErrorHelper,
+                _workflowMarkupSerializationHelper);
+
+            var contents = new List<ContentInfo>
+            {
+                new(123, 1, 1) // Wrong type - int instead of TestNestedObject
+            };
+
+            using (_designerSerializationManager.CreateSession())
+            {
+                // Act
+                contentProperty.SetContents(contents);
+
+                // Assert
+                Assert.NotEmpty(_designerSerializationManager.Errors);
+            }
+        }
+
+        [Fact]
+        public void SetContents_WithObjectPropertyAndCorrectType_SetsPropertyValue()
+        {
+            // Arrange
+            var parentObject = new TestContainerWithObjectProperty();
+            var parentSerializer = new WorkflowMarkupSerializer();
+
+            using var contentProperty = new ContentProperty(
+                _serializationManager,
+                parentSerializer,
+                parentObject,
+                _deserializeFromStringHelper,
+                _markupExtensionHelper,
+                _serializationErrorHelper,
+                _workflowMarkupSerializationHelper);
+
+            var nestedObj = new TestNestedObject { Name = "test" };
+            var contents = new List<ContentInfo>
+            {
+                new(nestedObj, 1, 1)
+            };
+
+            using (_designerSerializationManager.CreateSession())
+            {
+                // Act
+                contentProperty.SetContents(contents);
+
+                // Assert
+                Assert.Empty(_designerSerializationManager.Errors);
+                Assert.NotNull(parentObject.NestedObject);
+                Assert.Equal("test", parentObject.NestedObject.Name);
+            }
+        }
+
         #endregion
 
         #region SetContents Tests - Without Content Property
@@ -580,6 +865,56 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             Assert.True(true); // If we reach this point, it means no exception was thrown
 
             _serializationManager.WorkflowMarkupStack.Pop();
+        }
+
+        [Fact]
+        public void Dispose_WithXmlReaderAndNullContentPropertyValue_DoesNotCallOnAfterDeserialize()
+        {
+            // Arrange
+            var parentObject = new TestContainerWithObjectProperty();
+            var parentSerializer = new WorkflowMarkupSerializer();
+            var xml = "<TestContainerWithObjectProperty><NestedObject /></TestContainerWithObjectProperty>";
+            
+            using var stringReader = new StringReader(xml);
+            using var xmlReader = XmlReader.Create(stringReader);
+            
+            _serializationManager.WorkflowMarkupStack.Push(xmlReader);
+
+            var contentProperty = new ContentProperty(
+                _serializationManager,
+                parentSerializer,
+                parentObject,
+                _deserializeFromStringHelper,
+                _markupExtensionHelper,
+                _serializationErrorHelper,
+                _workflowMarkupSerializationHelper);
+
+            // Act & Assert - Should not throw
+            contentProperty.Dispose();
+            Assert.True(true);
+
+            _serializationManager.WorkflowMarkupStack.Pop();
+        }
+
+        [Fact]
+        public void Dispose_WithoutXmlReader_DoesNotCallOnAfterDeserialize()
+        {
+            // Arrange
+            var parentObject = new TestContainerWithStringCollection();
+            var parentSerializer = new WorkflowMarkupSerializer();
+
+            var contentProperty = new ContentProperty(
+                _serializationManager,
+                parentSerializer,
+                parentObject,
+                _deserializeFromStringHelper,
+                _markupExtensionHelper,
+                _serializationErrorHelper,
+                _workflowMarkupSerializationHelper);
+
+            // Act & Assert - Should not throw
+            contentProperty.Dispose();
+            Assert.True(true);
         }
 
         #endregion
