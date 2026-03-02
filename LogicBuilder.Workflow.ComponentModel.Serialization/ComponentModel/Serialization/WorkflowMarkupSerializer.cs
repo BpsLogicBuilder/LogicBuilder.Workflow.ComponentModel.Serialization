@@ -710,7 +710,7 @@
             if (obj == null)
                 throw new ArgumentNullException("obj");
 
-            return Array.Empty<object>();
+            return null!;//NOSONAR - this maintains the existing behavior such that the serializer does not create ab empty list in this scenario.
         }
 
         protected internal virtual void ClearChildren(WorkflowMarkupSerializationManager serializationManager, object obj)

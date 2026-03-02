@@ -773,7 +773,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
         }
 
         [Fact]
-        public void GetChildren_ReturnsEmptyList()
+        public void GetChildren_ReturnsNull()
         {
             // Arrange
             var serializer = new WorkflowMarkupSerializer();
@@ -788,7 +788,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             }
 
             // Assert
-            Assert.Empty(result);
+            Assert.Null(result);
         }
 
         #endregion
