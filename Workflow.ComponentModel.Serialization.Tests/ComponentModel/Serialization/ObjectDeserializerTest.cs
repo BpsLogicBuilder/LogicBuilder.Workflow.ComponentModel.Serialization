@@ -842,7 +842,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
                 _deserializer.DeserializeContents(_serializationManager, testObject, reader);
 
                 // Assert - Should complete without throwing
-                Assert.True(_designerSerializationManager.Errors.Count >= 0);
+                Assert.True(true);
             }
         }
 
