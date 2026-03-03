@@ -465,7 +465,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
 
         private void WriteComplexProperty(WorkflowMarkupSerializationManager serializationManager, object obj, XmlWriter writer, ContentProperty contentProperty, object propertyObj)
         {
-            Trace.Assert(obj != null, "obj cannot be null");
+            Trace.Assert(obj != null);
 
             // get value and check for null
             string propertyName = String.Empty;
