@@ -216,7 +216,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
             }
             else if (obj is string attribValue)
             {
-                attribValue = attribValue?.Replace('\0', ' ') ?? "";
+                attribValue = attribValue.Replace('\0', ' ');
                 if (!(attribValue.StartsWith("{", StringComparison.Ordinal) && attribValue.EndsWith("}", StringComparison.Ordinal)))
                     writer.WriteValue(attribValue);
                 else
@@ -486,7 +486,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
                 while (e is TargetInvocationException && e.InnerException != null)
                     e = e.InnerException;
 
-                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerPropertyGetFailed, propertyName, ownerType?.FullName ?? "", e.Message)));
+                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerPropertyGetFailed, propertyName, ownerType.FullName, e.Message)));
                 return;
             }
 

@@ -228,7 +228,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             {
                 _serializationManager.WorkflowMarkupStack.Push(xmlWriter);
 
-                using (var safeWriter = new SafeXmlNodeWriter(_serializationManager, owner, property, XmlNodeType.Element))
+                using (new SafeXmlNodeWriter(_serializationManager, owner, property, XmlNodeType.Element))
                 {
                     xmlWriter.WriteString("Content");
                 }
