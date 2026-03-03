@@ -465,6 +465,8 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
 
         private void WriteComplexProperty(WorkflowMarkupSerializationManager serializationManager, object obj, XmlWriter writer, ContentProperty contentProperty, object propertyObj)
         {
+            Trace.Assert(obj != null, "obj cannot be null");
+
             // get value and check for null
             string propertyName = String.Empty;
             object propertyValue = null;
@@ -477,8 +479,8 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
                 {
                     propertyName = property.Name;
                     propertyValue = property.CanRead ? property.GetValue(obj, null) : null;
-                    ownerType = obj?.GetType();
-                    isReadOnly = (!property.CanWrite);
+                    ownerType = obj.GetType();
+                    isReadOnly = !property.CanWrite;
                 }
             }
             catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
@@ -486,7 +488,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
                 while (e is TargetInvocationException && e.InnerException != null)
                     e = e.InnerException;
 
-                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerPropertyGetFailed, propertyName, ownerType?.FullName, e.Message)));
+                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerPropertyGetFailed, propertyName, ownerType.FullName, e.Message)));
                 return;
             }
 
