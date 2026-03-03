@@ -24,7 +24,7 @@
             return childEntries;
             /*using generics here would lead to incorrect results. 
              * e.g. ArrayList childEntries = [.. dictionary.Cast<DictionaryEntry>()]
-             * return childEntries*/
+             * return childEntries.  This creates KeyValuePair objects instead of DictionaryEntry objects.*/
         }
 
         protected internal override PropertyInfo[] GetProperties(WorkflowMarkupSerializationManager serializationManager, object obj)
@@ -87,7 +87,7 @@
             this.keylookupDictionary = new Hashtable();
         }
 
-        protected override void OnAfterSerialize(WorkflowMarkupSerializationManager serializationManager, object obj)
+        protected internal override void OnAfterSerialize(WorkflowMarkupSerializationManager serializationManager, object obj)
         {
             base.OnAfterSerialize(serializationManager, obj);
 
