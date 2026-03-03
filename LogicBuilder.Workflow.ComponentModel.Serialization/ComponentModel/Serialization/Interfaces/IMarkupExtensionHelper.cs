@@ -2,6 +2,7 @@
 {
     internal interface IMarkupExtensionHelper
     {
+        object GetMarkupExtensionFromValue(object value);
         object GetValueFromMarkupExtension(WorkflowMarkupSerializationManager serializationManager, object extension);
     }
 }

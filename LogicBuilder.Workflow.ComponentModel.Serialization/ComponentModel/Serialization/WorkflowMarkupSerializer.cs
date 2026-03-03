@@ -10,7 +10,6 @@
     using System.Collections.Generic;
     using System.ComponentModel;
     using System.ComponentModel.Design.Serialization;
-    using System.Diagnostics;
     using System.Globalization;
     using System.IO;
     using System.Linq;
@@ -23,9 +22,8 @@
     public class WorkflowMarkupSerializer
     {
         private readonly IDeserializeFromStringHelper deserializeFromStringHelper = DeserializeFromStringHelperFactory.Create(DependencyHelperFactory.Create());
-        private readonly IMarkupExtensionHelper markupExtensionHelper = MarkupExtensionHelperFactory.Create();
         private readonly IObjectDeserializer objectDeserializer = ObjectDeserializerFactory.Create();
-        private readonly ISerializationErrorHelper serializationErrorHelper = SerializationErrorHelperFactory.Create();
+        private readonly IObjectSerializer objectSerializer = ObjectSerializerFactory.Create();
         private readonly IWorkflowMarkupSerializationHelper workflowMarkupSerializationHelper = WorkflowMarkupSerializationHelperFactory.Create();
 
         #region Public Methods
@@ -49,7 +47,6 @@
                 throw new ArgumentNullException("reader");
 
             WorkflowMarkupSerializationManager markupSerializationManager = serializationManager as WorkflowMarkupSerializationManager ?? new WorkflowMarkupSerializationManager(serializationManager);
-            //string fileName = markupSerializationManager.Context[typeof(string)] as string ?? String.Empty;
             object obj = DeserializeXoml(markupSerializationManager, reader);
 
             return obj;
@@ -63,20 +60,23 @@
                 throw new ArgumentNullException("xmlReader");
 
             Object obj = null;
-            //xmlReader.WhitespaceHandling = WhitespaceHandling.None;
             serializationManager.WorkflowMarkupStack.Push(xmlReader);
 
             try
             {
-                // 
-                while (xmlReader.Read() && xmlReader.NodeType != XmlNodeType.Element && xmlReader.NodeType != XmlNodeType.ProcessingInstruction) ;
+                while (xmlReader.Read() && xmlReader.NodeType != XmlNodeType.Element && xmlReader.NodeType != XmlNodeType.ProcessingInstruction)
+                {
+                    // Advance the reader until we find the root element or reach the end of the stream. This allows us to ignore any leading comments or processing instructions.
+                }
                 if (xmlReader.EOF)
                     return null;
                 obj = DeserializeObject(serializationManager, xmlReader);
 
-                // Read until the end of the xml stream i.e past the </XomlDocument> tag. 
-                // If there are any exceptions log them as errors.
-                while (xmlReader.Read() && !xmlReader.EOF) ;
+                while (xmlReader.Read() && !xmlReader.EOF)
+                {
+                    // Read until the end of the xml stream i.e past the </XomlDocument> tag. 
+                    // If there are any exceptions log them as errors.
+                }
             }
             catch (XmlException xmlException)
             {
@@ -146,472 +146,13 @@
 
         internal void SerializeObject(WorkflowMarkupSerializationManager serializationManager, object obj, XmlWriter writer)
         {
-            if (serializationManager == null)
-                throw new ArgumentNullException("serializationManager");
-            if (obj == null)
-                throw new ArgumentNullException("obj");
-            if (writer == null)
-                throw new ArgumentNullException("writer");
-
-            try
-            {
-                serializationManager.WorkflowMarkupStack.Push(writer);
-                using (new SafeXmlNodeWriter(serializationManager, obj, null, XmlNodeType.Element))
-                {
-                    DictionaryEntry? entry = null;
-                    if (serializationManager.WorkflowMarkupStack[typeof(DictionaryEntry)] != null)
-                        entry = (DictionaryEntry)serializationManager.WorkflowMarkupStack[typeof(DictionaryEntry)];
-
-                    // To handle the case when the key and value are same in the dictionary
-                    bool key = entry.HasValue && ((!entry.Value.GetType().IsValueType && entry.Value.Key == entry.Value.Value && entry.Value.Value == obj) ||
-                                                    (entry.Value.GetType().IsValueType && entry.Value.Key.Equals(entry.Value.Value) && entry.Value.Value.Equals(obj))) &&
-                                                    serializationManager.SerializationStack.Contains(obj);
-                    if (key || !serializationManager.SerializationStack.Contains(obj))
-                    {
-                        serializationManager.Context.Push(obj);
-                        serializationManager.SerializationStack.Push(obj);
-                        try
-                        {
-                            SerializeContents(serializationManager, obj, writer, key);
-                        }
-                        finally
-                        {
-                            Debug.Assert(serializationManager.Context.Current == obj, "Serializer did not remove an object it pushed into stack.");
-                            serializationManager.Context.Pop();
-                            serializationManager.SerializationStack.Pop();
-                        }
-                    }
-                    else
-                        throw new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerStackOverflow, obj.ToString(), obj.GetType().FullName), 0, 0);
-                }
-            }
-            finally
-            {
-                serializationManager.WorkflowMarkupStack.Pop();
-            }
+            objectSerializer.SerializeObject(serializationManager, obj, writer);
         }
 
-        internal void SerializeContents(WorkflowMarkupSerializationManager serializationManager, object obj, XmlWriter writer, bool dictionaryKey)
-        {
-            if (serializationManager == null)
-                throw new ArgumentNullException("serializationManager");
-            if (obj == null)
-                throw new ArgumentNullException("obj");
-            if (writer == null)
-                throw new ArgumentNullException("writer");
-
-            WorkflowMarkupSerializer serializer;
-            try
-            {
-                //Now get the serializer to persist the properties, if the serializer is not found then we dont serialize the properties
-                serializer = serializationManager.GetSerializer(obj.GetType(), typeof(WorkflowMarkupSerializer)) as WorkflowMarkupSerializer;
-
-            }
-            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-            {
-                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
-                return;
-
-            }
-
-            if (serializer == null)
-            {
-                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNotAvailableForSerialize, obj.GetType().FullName)));
-                return;
-            }
-
-            try
-            {
-                serializer.OnBeforeSerialize(serializationManager, obj);
-            }
-            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-            {
-                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
-                return;
-            }
-            //Need the SortedDictionary to keep serialization repeatable.
-            SortedDictionary<string, object> allProperties = [];
-            ArrayList complexProperties = [];
-
-            List<PropertyInfo> properties = [];
-            List<EventInfo> events = [];
-
-            // Serialize the extended properties for primitive types also
-            if (obj.GetType().IsPrimitive || obj.GetType() == typeof(string) || obj.GetType() == typeof(decimal) ||
-                obj.GetType() == typeof(DateTime) || obj.GetType() == typeof(TimeSpan) || obj.GetType().IsEnum ||
-                obj.GetType() == typeof(Guid))
-            {
-                if (obj.GetType() == typeof(char) || obj.GetType() == typeof(byte) ||
-                    obj.GetType() == typeof(System.Int16) || obj.GetType() == typeof(decimal) ||
-                    obj.GetType() == typeof(DateTime) || obj.GetType() == typeof(TimeSpan) ||
-                    obj.GetType().IsEnum || obj.GetType() == typeof(Guid))
-                {
-                    //These non CLS-compliant are not supported in the XmlWriter 
-                    if ((obj.GetType() != typeof(char)) || (char)obj != '\0')
-                    {
-                        //These non CLS-compliant are not supported in the XmlReader 
-                        string stringValue;
-                        if (obj.GetType() == typeof(DateTime))
-                        {
-                            stringValue = ((DateTime)obj).ToString("o", CultureInfo.InvariantCulture);
-                        }
-                        else
-                        {
-                            TypeConverter typeConverter = TypeDescriptor.GetConverter(obj.GetType());
-                            stringValue = typeConverter != null && typeConverter.CanConvertTo(typeof(string))
-                                ? typeConverter.ConvertTo(null, CultureInfo.InvariantCulture, obj, typeof(string)) as string
-                                : Convert.ToString(obj, CultureInfo.InvariantCulture);
-                        }
-
-                        writer.WriteValue(stringValue);
-                    }
-                }
-                else if (obj.GetType() == typeof(string))
-                {
-                    string attribValue = obj as string;
-                    attribValue = attribValue?.Replace('\0', ' ') ?? "";
-                    if (!(attribValue.StartsWith("{", StringComparison.Ordinal) && attribValue.EndsWith("}", StringComparison.Ordinal)))
-                        writer.WriteValue(attribValue);
-                    else
-                        writer.WriteValue("{}" + attribValue);
-                }
-                else
-                {
-                    writer.WriteValue(obj);
-                }
-                // For Key properties, we don't want to get the extended properties
-                if (!dictionaryKey)
-                    properties.AddRange(serializationManager.GetExtendedProperties(obj));
-            }
-            else
-            {
-                // Serialize properties
-                //We first get all the properties, once we have them all, we start distinguishing between
-                //simple and complex properties, the reason for that is XmlWriter needs to write attributes
-                //first and elements later
-
-                // Dependency events are treated as the same as dependency properties.
-
-
-                try
-                {
-                    properties.AddRange(serializer.GetProperties(serializationManager, obj));
-                    // For Key properties, we don;t want to get the extended properties
-                    if (!dictionaryKey)
-                        properties.AddRange(serializationManager.GetExtendedProperties(obj));
-                    events.AddRange(serializer.GetEvents(serializationManager, obj));
-                }
-                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-                {
-                    serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
-                    return;
-                }
-            }
-
-            foreach (PropertyInfo propInfo in properties.Where(p => p != null && !allProperties.ContainsKey(p.Name)))
-            {
-                // Do not serialize properties that have corresponding dynamic properties.
-                allProperties.Add(propInfo.Name, propInfo);
-            }
-
-            foreach (EventInfo eventInfo in events.Where(e => e != null && !allProperties.ContainsKey(e.Name)))
-            {
-                // Do not serialize events that have corresponding dynamic properties.
-                allProperties.Add(eventInfo.Name, eventInfo);
-            }
-
-            using (ContentProperty contentProperty = new(serializationManager, serializer, obj, deserializeFromStringHelper, markupExtensionHelper, serializationErrorHelper, workflowMarkupSerializationHelper))
-            {
-                foreach (object propertyObj in allProperties.Values)
-                {
-                    string propertyName = String.Empty;
-                    object propertyValue = null;
-                    Type propertyInfoType = null;
-
-                    try
-                    {
-                        if (propertyObj is PropertyInfo property)
-                        {
-                            // If the property has parameters we can not serialize it , we just move on.
-                            ParameterInfo[] indexParameters = property.GetIndexParameters();
-                            if (indexParameters != null && indexParameters.Length > 0)
-                                continue;
-
-                            propertyName = property.Name;
-                            propertyValue = null;
-                            if (property.CanRead)
-                            {
-                                propertyValue = property.GetValue(obj, null);
-                            }
-                            propertyInfoType = property.PropertyType;
-                        }
-                    }
-                    catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-                    {
-                        while (e is TargetInvocationException && e.InnerException != null)
-                            e = e.InnerException;
-
-                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerPropertyGetFailed, [propertyName, obj.GetType().FullName, e.Message])));
-                        continue;
-                    }
-
-                    if (propertyObj is PropertyInfo propertyInfo && contentProperty.Property == propertyInfo)
-                        continue;
-
-                    Type propertyValueType = null;
-                    if (propertyValue != null)
-                    {
-                        propertyValue = GetMarkupExtensionFromValue(propertyValue);
-                        propertyValueType = propertyValue.GetType();
-                    }
-                    else if (propertyObj is PropertyInfo)
-                    {
-                        propertyValue = new NullExtension();
-                        propertyValueType = propertyValue.GetType();
-                        Attribute[] attributes = Attribute.GetCustomAttributes(propertyObj as PropertyInfo, typeof(DefaultValueAttribute), true);
-                        if (attributes.Length > 0)
-                        {
-                            DefaultValueAttribute defaultValueAttr = attributes[0] as DefaultValueAttribute;
-                            if (defaultValueAttr?.Value == null)
-                                propertyValue = null;
-                        }
-                    }
-                    if (propertyValue != null)
-                        propertyValueType = propertyValue.GetType();
-
-                    //Now get the serializer to persist the properties, if the serializer is not found then we dont serialize the properties
-                    serializationManager.Context.Push(propertyObj);
-                    WorkflowMarkupSerializer propValueSerializer = null;
-                    try
-                    {
-                        propValueSerializer = serializationManager.GetSerializer(propertyValueType, typeof(WorkflowMarkupSerializer)) as WorkflowMarkupSerializer;
-                    }
-                    catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-                    {
-                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
-                        serializationManager.Context.Pop();
-                        continue;
-                    }
-                    if (propValueSerializer == null)
-                    {
-                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNotAvailableForSerialize, propertyValueType?.FullName ?? "")));
-                        serializationManager.Context.Pop();
-                        continue;
-                    }
-
-                    // ask serializer if we can serialize
-                    try
-                    {
-                        if (propValueSerializer.ShouldSerializeValue(serializationManager, propertyValue))
-                        {
-                            //NOTE: THE FOLLOWING CONDITION ABOUT propertyInfoType != typeof(object) is VALID AS WE SHOULD NOT SERIALIZE A PROPERTY OF TYPE OBJECT TO STRING
-                            //IF WE DO THAT THEN WE DO NOT KNOWN WHAT WAS THE TYPE OF ORIGINAL OBJECT AND SERIALIZER WONT BE ABLE TO GET THE STRING BACK INTO THE CORRECT TYPE,
-                            //AS THE TYPE INFORMATION IS LOST
-                            if (propValueSerializer.CanSerializeToString(serializationManager, propertyValue) && propertyInfoType != typeof(object))
-                            {
-                                using (new SafeXmlNodeWriter(serializationManager, obj, propertyObj, XmlNodeType.Attribute))
-                                {
-                                    //This is a work around to special case the markup extension serializer as it writes to the stream using writer
-                                    if (propValueSerializer is MarkupExtensionSerializer)
-                                    {
-                                        propValueSerializer.SerializeToString(serializationManager, propertyValue);
-                                    }
-                                    else
-                                    {
-                                        string stringValue = propValueSerializer.SerializeToString(serializationManager, propertyValue);
-                                        if (!string.IsNullOrEmpty(stringValue))
-                                        {
-                                            stringValue = stringValue.Replace('\0', ' ');
-                                            if (propertyValue is MarkupExtension || !(stringValue.StartsWith("{", StringComparison.Ordinal) && stringValue.EndsWith("}", StringComparison.Ordinal)))
-                                                writer.WriteString(stringValue);
-                                            else
-                                                writer.WriteString("{}" + stringValue);
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                complexProperties.Add(propertyObj);
-                            }
-                        }
-                    }
-                    catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-                    {
-                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNoSerializeLogic, [propertyName, obj.GetType().FullName]), e));
-                    }
-                    finally
-                    {
-                        Debug.Assert(serializationManager.Context.Current == propertyObj, "Serializer did not remove an object it pushed into stack.");
-                        serializationManager.Context.Pop();
-                    }
-                }
-
-                try
-                {
-                    serializer.OnBeforeSerializeContents(serializationManager, obj);
-                }
-                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-                {
-                    serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
-                    return;
-                }
-
-                // serialize compound properties as child elements of the current node.
-                foreach (object propertyObj in complexProperties)
-                {
-                    // get value and check for null
-                    string propertyName = String.Empty;
-                    object propertyValue = null;
-                    Type ownerType = null;
-                    bool isReadOnly = false;
-
-                    try
-                    {
-                        if (propertyObj is PropertyInfo property)
-                        {
-                            propertyName = property.Name;
-                            propertyValue = property.CanRead ? property.GetValue(obj, null) : null;
-                            ownerType = obj.GetType();
-                            isReadOnly = (!property.CanWrite);
-                        }
-                    }
-                    catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-                    {
-                        while (e is TargetInvocationException && e.InnerException != null)
-                            e = e.InnerException;
-
-                        serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerPropertyGetFailed, propertyName, ownerType?.FullName ?? "", e.Message)));
-                        continue;
-                    }
-
-                    if (propertyObj is PropertyInfo propertyInfo && propertyInfo == contentProperty.Property)
-                        continue;
-
-                    if (propertyValue != null)
-                    {
-                        propertyValue = GetMarkupExtensionFromValue(propertyValue);
-
-                        if (serializationManager.GetSerializer(propertyValue.GetType(), typeof(WorkflowMarkupSerializer)) is WorkflowMarkupSerializer propValueSerializer)
-                        {
-                            using (new SafeXmlNodeWriter(serializationManager, obj, propertyObj, XmlNodeType.Element))
-                            {
-                                if (isReadOnly)
-                                    propValueSerializer.SerializeContents(serializationManager, propertyValue, writer, false);
-                                else
-                                    propValueSerializer.SerializeObject(serializationManager, propertyValue, writer);
-                            }
-                        }
-                        else
-                        {
-                            serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNotAvailableForSerialize, propertyValue.GetType().FullName)));
-                        }
-                    }
-                }
-
-                // serialize the contents
-                try
-                {
-                    object contents = contentProperty.GetContents();
-                    if (contents != null)
-                    {
-                        contents = GetMarkupExtensionFromValue(contents);
-
-                        if (serializationManager.GetSerializer(contents.GetType(), typeof(WorkflowMarkupSerializer)) is not WorkflowMarkupSerializer propValueSerializer)
-                        {
-                            serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNotAvailableForSerialize, contents.GetType())));
-                        }
-                        else
-                        {
-                            //
-
-
-
-                            //NOTE: THE FOLLOWING CONDITION ABOUT contentProperty.Property.PropertyType != typeof(object) is VALID AS WE SHOULD NOT SERIALIZE A PROPERTY OF TYPE OBJECT TO STRING
-                            //IF WE DO THAT THEN WE DO NOT KNOWN WHAT WAS THE TYPE OF ORIGINAL OBJECT AND SERIALIZER WONT BE ABLE TO GET THE STRING BACK INTO THE CORRECT TYPE,
-                            //AS THE TYPE INFORMATION IS LOST
-                            if (propValueSerializer.CanSerializeToString(serializationManager, contents) &&
-                                (contentProperty.Property == null || contentProperty.Property.PropertyType != typeof(object)))
-                            {
-                                string stringValue = propValueSerializer.SerializeToString(serializationManager, contents);
-                                if (!string.IsNullOrEmpty(stringValue))
-                                {
-                                    stringValue = stringValue.Replace('\0', ' ');
-                                    if (contents is MarkupExtension || !(stringValue.StartsWith("{", StringComparison.Ordinal) && stringValue.EndsWith("}", StringComparison.Ordinal)))
-                                        writer.WriteString(stringValue);
-                                    else
-                                        writer.WriteString("{}" + stringValue);
-                                }
-                            }
-                            else if (CollectionMarkupSerializer.IsValidCollectionType(contents.GetType()))
-                            {
-                                if (contentProperty.Property == null)
-                                {
-                                    IEnumerable enumerableContents = contents as IEnumerable ?? Array.Empty<object>();
-                                    foreach (object childObj in enumerableContents)
-                                    {
-                                        if (childObj == null)
-                                        {
-                                            SerializeObject(serializationManager, new NullExtension(), writer);
-                                        }
-                                        else
-                                        {
-                                            object childObj2 = childObj;
-                                            bool dictionaryEntry = (childObj2 is DictionaryEntry);
-                                            try
-                                            {
-                                                if (dictionaryEntry)
-                                                {
-                                                    serializationManager.WorkflowMarkupStack.Push(childObj);
-                                                    childObj2 = ((DictionaryEntry)childObj2).Value;
-                                                }
-                                                childObj2 = GetMarkupExtensionFromValue(childObj2);
-                                                if (serializationManager.GetSerializer(childObj2.GetType(), typeof(WorkflowMarkupSerializer)) is WorkflowMarkupSerializer childObjectSerializer)
-                                                    childObjectSerializer.SerializeObject(serializationManager, childObj2, writer);
-                                                else
-                                                    serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerNotAvailableForSerialize, childObj2.GetType())));
-                                            }
-                                            finally
-                                            {
-                                                if (dictionaryEntry)
-                                                    serializationManager.WorkflowMarkupStack.Pop();
-                                            }
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    propValueSerializer.SerializeContents(serializationManager, contents, writer, false);
-                                }
-                            }
-                            else
-                            {
-                                propValueSerializer.SerializeObject(serializationManager, contents, writer);
-                            }
-                        }
-                    }
-                }
-                catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-                {
-                    serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
-                    return;
-                }
-            }
-
-            try
-            {
-                serializer.OnAfterSerialize(serializationManager, obj);
-            }
-            catch (Exception e) when (!ExceptionUtility.IsCriticalException(e))
-            {
-                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerThrewException, obj.GetType().FullName, e.Message), e));
-                return;
-            }
-        }
         #endregion
 
         #region Overridable Methods
-        protected virtual void OnBeforeSerialize(WorkflowMarkupSerializationManager serializationManager, object obj)
+        protected internal virtual void OnBeforeSerialize(WorkflowMarkupSerializationManager serializationManager, object obj)
         {
         }
 
@@ -620,7 +161,7 @@
 
         }
 
-        protected virtual void OnAfterSerialize(WorkflowMarkupSerializationManager serializationManager, object obj)
+        protected internal virtual void OnAfterSerialize(WorkflowMarkupSerializationManager serializationManager, object obj)
         {
         }
 
@@ -690,10 +231,10 @@
             if (value == null)
                 throw new ArgumentNullException("value");
 
-            if (typeof(Delegate).IsAssignableFrom(value.GetType()))
-                return ((Delegate)value).Method.Name;
-            else if (typeof(DateTime).IsAssignableFrom(value.GetType()))
-                return ((DateTime)value).ToString("o", CultureInfo.InvariantCulture);
+            if (value is Delegate delegateValue)
+                return delegateValue.Method.Name;
+            else if (value is DateTime dateTimeValue)
+                return dateTimeValue.ToString("o", CultureInfo.InvariantCulture);
             else
                 return Convert.ToString(value, CultureInfo.InvariantCulture);
         }
@@ -844,83 +385,6 @@
         }
         #endregion
 
-        #region SafeXmlNodeWriter
-        private sealed class SafeXmlNodeWriter : IDisposable
-        {
-            private readonly XmlNodeType xmlNodeType;
-            private readonly WorkflowMarkupSerializationManager serializationManager = null;
-
-            public SafeXmlNodeWriter(WorkflowMarkupSerializationManager serializationManager, object owner, object property, XmlNodeType xmlNodeType)
-            {
-                this.serializationManager = serializationManager;
-                this.xmlNodeType = xmlNodeType;
-
-                XmlWriter writer = serializationManager.WorkflowMarkupStack[typeof(XmlWriter)] as XmlWriter ?? throw new InvalidOperationException(SR.GetString(SR.Error_InternalSerializerError));
-                string prefix = String.Empty;
-                string tagName;
-                string xmlns;
-                if (property is MemberInfo memberInfo)
-                {
-                    if (property is ExtendedPropertyInfo extendedProperty)
-                    {
-                        XmlQualifiedName qualifiedName = extendedProperty.GetXmlQualifiedName(this.serializationManager, out prefix);
-                        tagName = qualifiedName.Name;
-                        xmlns = qualifiedName.Namespace;
-                    }
-                    else if (this.xmlNodeType == XmlNodeType.Element)
-                    {
-                        XmlQualifiedName qualifiedName = this.serializationManager.GetXmlQualifiedName(owner.GetType(), out prefix);
-                        tagName = qualifiedName.Name + "." + memberInfo.Name;
-                        xmlns = qualifiedName.Namespace;
-                    }
-                    else
-                    {
-                        tagName = memberInfo.Name;
-                        xmlns = String.Empty;
-                    }
-                }
-                else
-                {
-                    XmlQualifiedName qualifiedName = this.serializationManager.GetXmlQualifiedName(owner.GetType(), out prefix);
-                    tagName = qualifiedName.Name;
-                    xmlns = qualifiedName.Namespace;
-                }
-
-                //verify the node name is valid. This may happen for design time names as 
-                // "(Parameter) PropName"
-                tagName = XmlConvert.EncodeName(tagName);
-
-                if (this.xmlNodeType == XmlNodeType.Element)
-                {
-                    writer.WriteStartElement(prefix, tagName, xmlns);
-                    this.serializationManager.WriterDepth += 1;
-                }
-                else if (this.xmlNodeType == XmlNodeType.Attribute)
-                {
-                    writer.WriteStartAttribute(prefix, tagName, xmlns);
-                }
-            }
-
-            #region IDisposable Members
-            void IDisposable.Dispose()
-            {
-                if (this.serializationManager.WorkflowMarkupStack[typeof(XmlWriter)] is XmlWriter writer && writer.WriteState != WriteState.Error)
-                {
-                    if (this.xmlNodeType == XmlNodeType.Element)
-                    {
-                        writer.WriteEndElement();
-                        this.serializationManager.WriterDepth -= 1;
-                    }
-                    else if (writer.WriteState == WriteState.Attribute)
-                    {
-                        writer.WriteEndAttribute();
-                    }
-                }
-            }
-            #endregion
-        }
-        #endregion
-
         #endregion
 
         #region Compact Attribute Support
@@ -950,18 +414,6 @@
                 typeName = typeof(ArrayExtension).Name;
             }
             return typeName;
-        }
-
-        private static object GetMarkupExtensionFromValue(object value)
-        {
-            if (value == null)
-                return new NullExtension();
-            if (value is System.Type typeValue)
-                return new TypeExtension(typeValue);
-            if (value is Array arrayValue)
-                return new ArrayExtension(arrayValue);
-
-            return value;
         }
         #endregion
     }
