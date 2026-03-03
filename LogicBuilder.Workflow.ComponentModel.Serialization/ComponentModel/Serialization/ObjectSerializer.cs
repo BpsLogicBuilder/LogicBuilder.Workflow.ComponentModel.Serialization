@@ -477,7 +477,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
                 {
                     propertyName = property.Name;
                     propertyValue = property.CanRead ? property.GetValue(obj, null) : null;
-                    ownerType = obj.GetType();
+                    ownerType = obj?.GetType();
                     isReadOnly = (!property.CanWrite);
                 }
             }
@@ -486,7 +486,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
                 while (e is TargetInvocationException && e.InnerException != null)
                     e = e.InnerException;
 
-                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerPropertyGetFailed, propertyName, ownerType.FullName, e.Message)));
+                serializationManager.ReportError(new WorkflowMarkupSerializationException(SR.GetString(SR.Error_SerializerPropertyGetFailed, propertyName, ownerType?.FullName, e.Message)));
                 return;
             }
 
