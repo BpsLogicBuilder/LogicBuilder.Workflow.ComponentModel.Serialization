@@ -22,15 +22,10 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
         {
             get { return this.clrNamespace; }
         }
-        public string AssemblyName
-        {
-            get { return this.assemblyName; }
-            set { this.assemblyName = value; }
-        }
+        public string AssemblyName { get; set; }
 
         private readonly string xmlNamespace = xmlNamespace ?? throw new ArgumentNullException("xmlNamespace");
         private readonly string clrNamespace = clrNamespace ?? throw new ArgumentNullException("clrNamespace");
-        private string assemblyName;
     }
 
     [ExcludeFromCodeCoverage]
@@ -203,7 +198,6 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
     internal sealed class ArrayExtension : MarkupExtension
     {
         private readonly ArrayList arrayElementList = [];
-        private Type arrayType;
 
         public ArrayExtension()
         {
@@ -211,7 +205,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
 
         public ArrayExtension(Type arrayType)
         {
-            this.arrayType = arrayType ?? throw new ArgumentNullException("arrayType");
+            Type = arrayType ?? throw new ArgumentNullException("arrayType");
         }
 
         public ArrayExtension(Array elements)
@@ -220,23 +214,10 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
                 throw new ArgumentNullException("elements");
 
             arrayElementList.AddRange(elements);
-            this.arrayType = elements.GetType().GetElementType();
+            Type = elements.GetType().GetElementType();
         }
 
-        //
-
-        public Type Type
-        {
-            get
-            {
-                return this.arrayType;
-            }
-
-            set
-            {
-                this.arrayType = value;
-            }
-        }
+        public Type Type { get; set; }
 
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public IList Items
@@ -252,20 +233,16 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
             if (provider == null)
                 throw new ArgumentNullException("provider");
 
-            if (this.arrayType == null)
+            if (Type == null)
                 throw new InvalidOperationException("ArrayType needs to be set.");
 
             object retArray;
             try
             {
-                retArray = arrayElementList.ToArray(this.arrayType);
+                retArray = arrayElementList.ToArray(Type);
             }
             catch (System.InvalidCastException)
             {
-                //
-
-
-
                 throw new InvalidOperationException();
             }
 
