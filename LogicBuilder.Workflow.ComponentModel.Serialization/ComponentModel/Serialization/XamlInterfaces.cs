@@ -89,7 +89,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
     }
 
     [ExcludeFromCodeCoverage]
-    public abstract class MarkupExtension
+    public abstract class MarkupExtension //NOSONAR
     {
         public abstract object ProvideValue(IServiceProvider provider);
     }
@@ -116,11 +116,11 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
 
         public TypeExtension(string type)
         {
-            this.typeName = type ?? throw new ArgumentNullException("typeName");
+            this.typeName = type ?? throw new ArgumentNullException(nameof(type));
         }
         public TypeExtension(Type type)
         {
-            this.type = type ?? throw new ArgumentNullException("type");
+            this.type = type ?? throw new ArgumentNullException(nameof(type));
         }
         public override object ProvideValue(IServiceProvider provider)
         {
@@ -128,10 +128,10 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
                 return this.type;
 
             if (provider == null)
-                throw new ArgumentNullException("provider");
+                throw new ArgumentNullException(nameof(provider));
 
             if (this.typeName == null)
-                throw new InvalidOperationException("typename");
+                throw new InvalidOperationException(nameof(typeName));
 
             WorkflowMarkupSerializationManager manager = provider as WorkflowMarkupSerializationManager ?? throw new ArgumentNullException("provider");
             if (manager.WorkflowMarkupStack[typeof(XmlReader)] is not XmlReader reader)

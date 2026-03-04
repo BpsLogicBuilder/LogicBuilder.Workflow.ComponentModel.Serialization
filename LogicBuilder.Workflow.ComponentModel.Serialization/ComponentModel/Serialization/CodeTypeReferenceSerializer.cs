@@ -45,18 +45,13 @@ namespace LogicBuilder.Workflow.ComponentModel.Serialization
                     return typeName;
                 }
             }
-            //
-            // If we get a real type make sure that we get the correct fully qualified name for the target framework version
-            string assemblyFullName = null;
-
+            
             // If we didn't find an assembly value it is either a local type or something is wrong
             // However per the general guidance on multi-targeting it is up to the caller
             // to make sure that writers (such as Xoml) are given types that exist in the target framework
             // This makes it the job of the rules designer or rules validator to not call the Xoml stack
             // with types that do not exist in the target framework
-            return string.IsNullOrEmpty(assemblyFullName)
-                ? type.AssemblyQualifiedName
-                : string.Format(CultureInfo.InvariantCulture, "{0}, {1}", type.FullName, assemblyFullName);
+            return type.AssemblyQualifiedName;
         }
 
         protected internal override object DeserializeFromString(WorkflowMarkupSerializationManager serializationManager, Type propertyType, string value)

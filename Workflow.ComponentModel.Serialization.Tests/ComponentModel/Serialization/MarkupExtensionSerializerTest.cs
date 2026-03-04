@@ -104,7 +104,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             }
         }
 
-        private sealed class WellKnownTypeSerializationProvider : IDesignerSerializationProvider
+        private sealed class WellKnownTypeSerializationProvider : IDesignerSerializationProvider //NOSONAR - used on line 33 of this file.
         {
             #region IDesignerSerializationProvider Members
             object? IDesignerSerializationProvider.GetSerializer(IDesignerSerializationManager manager, object? currentSerializer, Type? objectType, Type serializerType)

@@ -36,7 +36,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var invalidObject = "not a collection";
 
             // Act & Assert
-            var exception = Assert.Throws<Exception>(() => _serializer.GetChildren(_serializationManager, invalidObject));
+            var exception = Assert.Throws<InvalidOperationException>(() => _serializer.GetChildren(_serializationManager, invalidObject));
             Assert.Contains("The object of type", exception.Message);
             Assert.Contains("needs to implement", exception.Message);
             Assert.Contains("in order to be serialized as a Collection", exception.Message);
@@ -49,7 +49,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var array = new int[] { 1, 2, 3 };
 
             // Act & Assert
-            var exception = Assert.Throws<Exception>(() => _serializer.GetChildren(_serializationManager, array));
+            var exception = Assert.Throws<InvalidOperationException>(() => _serializer.GetChildren(_serializationManager, array));
             Assert.Contains("The object of type", exception.Message);
             Assert.Contains("needs to implement", exception.Message);
             Assert.Contains("in order to be serialized as a Collection", exception.Message);
@@ -142,7 +142,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var invalidValue = "not a collection";
 
             // Act & Assert
-            var exception = Assert.Throws<Exception>(() => _serializer.ShouldSerializeValue(_serializationManager, invalidValue));
+            var exception = Assert.Throws<InvalidOperationException>(() => _serializer.ShouldSerializeValue(_serializationManager, invalidValue));
             Assert.Contains("The object of type", exception.Message);
             Assert.Contains("needs to implement", exception.Message);
             Assert.Contains("in order to be serialized as a Collection", exception.Message);
@@ -155,7 +155,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var array = new int[] { 1, 2, 3 };
 
             // Act & Assert
-            var exception = Assert.Throws<Exception>(() => _serializer.ShouldSerializeValue(_serializationManager, array));
+            var exception = Assert.Throws<InvalidOperationException>(() => _serializer.ShouldSerializeValue(_serializationManager, array));
             Assert.Contains("The object of type", exception.Message);
             Assert.Contains("needs to implement", exception.Message);
             Assert.Contains("in order to be serialized as a Collection", exception.Message);
@@ -205,7 +205,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var invalidObject = "not a collection";
 
             // Act & Assert
-            var exception = Assert.Throws<Exception>(() => _serializer.ClearChildren(_serializationManager, invalidObject));
+            var exception = Assert.Throws<InvalidOperationException>(() => _serializer.ClearChildren(_serializationManager, invalidObject));
             Assert.Contains("in order to be serialized as a Collection", exception.Message);
         }
 
@@ -216,7 +216,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var array = new int[] { 1, 2, 3 };
 
             // Act & Assert
-            var exception = Assert.Throws<Exception>(() => _serializer.ClearChildren(_serializationManager, array));
+            var exception = Assert.Throws<InvalidOperationException>(() => _serializer.ClearChildren(_serializationManager, array));
             Assert.Contains("The object of type", exception.Message);
             Assert.Contains("needs to implement", exception.Message);
             Assert.Contains("in order to be serialized as a Collection", exception.Message);
@@ -270,7 +270,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var childObj = "child";
 
             // Act & Assert
-            var exception = Assert.Throws<Exception>(() => _serializer.AddChild(_serializationManager, invalidParent, childObj));
+            var exception = Assert.Throws<InvalidOperationException>(() => _serializer.AddChild(_serializationManager, invalidParent, childObj));
             Assert.Contains("The object of type", exception.Message);
             Assert.Contains("needs to implement", exception.Message);
             Assert.Contains("in order to be serialized as a Collection", exception.Message);
@@ -284,7 +284,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
             var childObj = 4;
 
             // Act & Assert
-            var exception = Assert.Throws<Exception>(() => _serializer.AddChild(_serializationManager, array, childObj));
+            var exception = Assert.Throws<InvalidOperationException>(() => _serializer.AddChild(_serializationManager, array, childObj));
             Assert.Contains("The object of type", exception.Message);
             Assert.Contains("needs to implement", exception.Message);
             Assert.Contains("in order to be serialized as a Collection", exception.Message);

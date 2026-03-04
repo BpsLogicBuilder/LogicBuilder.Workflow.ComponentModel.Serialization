@@ -16,7 +16,7 @@
                 throw new ArgumentNullException("obj");
 
             if (!IsValidCollectionType(obj.GetType()))
-                throw new Exception(SR.GetString(SR.Error_SerializerTypeRequirement, obj.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
+                throw new InvalidOperationException(SR.GetString(SR.Error_SerializerTypeRequirement, obj.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
 
             IEnumerable enumerable = obj as IEnumerable ?? Enumerable.Empty<object>();
             ArrayList arrayList = [.. enumerable];
@@ -34,7 +34,7 @@
                 return false;
 
             if (!IsValidCollectionType(value.GetType()))
-                throw new Exception(SR.GetString(SR.Error_SerializerTypeRequirement, value.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
+                throw new InvalidOperationException(SR.GetString(SR.Error_SerializerTypeRequirement, value.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
 
             IEnumerable<object> enumerable = (value as IEnumerable)?.OfType<object>();
 
@@ -47,7 +47,7 @@
                 throw new ArgumentNullException("obj");
 
             if (!IsValidCollectionType(obj.GetType()))
-                throw new Exception(SR.GetString(SR.Error_SerializerTypeRequirement, obj.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
+                throw new InvalidOperationException(SR.GetString(SR.Error_SerializerTypeRequirement, obj.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
 
             if (obj is ICollection) /*Updating from collection == null - appears to be a bug e.g. List of T passes IsValidCollectionType and implements System.Collections.ICollection.*/
                 obj.GetType().InvokeMember("Clear", BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance, null, obj, [], CultureInfo.InvariantCulture);
@@ -59,7 +59,7 @@
                 throw new ArgumentNullException(nameof(parentObject));
 
             if (!IsValidCollectionType(parentObject.GetType()))
-                throw new Exception(SR.GetString(SR.Error_SerializerTypeRequirement, parentObject.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
+                throw new InvalidOperationException(SR.GetString(SR.Error_SerializerTypeRequirement, parentObject.GetType().FullName, typeof(ICollection).FullName, typeof(ICollection<>).FullName));
 
             parentObject.GetType().InvokeMember("Add", BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance, null, parentObject, [childObj], CultureInfo.InvariantCulture);
         }

@@ -30,12 +30,12 @@ namespace LogicBuilder.Workflow.ComponentModel.Design
         {
             if (propertyType.IsAssignableFrom(typeof(System.Drawing.Color)))
             {
-                string colorValue = value as string;
+                string colorValue = value;
                 if (!String.IsNullOrEmpty(colorValue))
                 {
                     if (colorValue.StartsWith("0X", StringComparison.OrdinalIgnoreCase))
                     {
-                        long propertyValue = Convert.ToInt64((string)value, 16) & 0xFFFFFFFF;
+                        long propertyValue = Convert.ToInt64(value, 16) & 0xFFFFFFFF;
                         return System.Drawing.Color.FromArgb((Byte)(propertyValue >> 24), (Byte)(propertyValue >> 16), (Byte)(propertyValue >> 8), (Byte)(propertyValue));
                     }
                     else
