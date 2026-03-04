@@ -4,7 +4,6 @@ using System.Globalization;
 
 namespace LogicBuilder.Workflow.ComponentModel.Compiler
 {
-    [Serializable()]
     public sealed class ValidationError(string errorText, int errorNumber, bool isWarning, string propertyName)
     {
         private readonly string errorText = errorText;

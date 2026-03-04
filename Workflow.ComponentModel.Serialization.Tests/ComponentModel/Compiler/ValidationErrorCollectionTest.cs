@@ -519,5 +519,22 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         }
 
         #endregion
+
+        #region Serialization Tests
+
+        [Fact]
+        public void ValidationErrorCollection_DoesNotHaveSerializableAttribute()
+        {
+            // Arrange
+            var type = typeof(ValidationErrorCollection);
+
+            // Act
+            var attributes = type.GetCustomAttributes(typeof(SerializableAttribute), false);
+
+            // Assert
+            Assert.Empty(attributes);
+        }
+
+        #endregion
     }
 }
