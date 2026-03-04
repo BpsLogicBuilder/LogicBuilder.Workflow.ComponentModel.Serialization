@@ -573,7 +573,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
         #region Serialization Tests
 
         [Fact]
-        public void ValidationError_HasSerializableAttribute()
+        public void ValidationError_DoesNotHaveSerializableAttribute()
         {
             // Arrange
             var type = typeof(ValidationError);
@@ -582,7 +582,7 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Compiler
             var attributes = type.GetCustomAttributes(typeof(SerializableAttribute), false);
 
             // Assert
-            Assert.NotEmpty(attributes);
+            Assert.Empty(attributes);
         }
 
         #endregion

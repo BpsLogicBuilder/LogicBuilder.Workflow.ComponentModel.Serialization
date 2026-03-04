@@ -14,7 +14,7 @@
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
     <Description>Manages serialization of rule sets for .NetStandard.</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-		<PackageReleaseNotes>Refactoring to accelerate DevOps.</PackageReleaseNotes>
+		<PackageReleaseNotes>Fixes to improve maintainability and reliability.</PackageReleaseNotes>
     <PackageTags>rules serialization</PackageTags>
     <Copyright>Copyright © Microsoft 2017</Copyright>
     <RepositoryUrl>https://github.com/BpsLogicBuilder/LogicBuilder.Workflow.ComponentModel.Serialization</RepositoryUrl>
@@ -44,12 +44,12 @@
 
   <ItemGroup>
     <PackageReference Include="LogicBuilder.ComponentModel.Design.Serialization" Version="2.0.9" />
-    <PackageReference Include="System.CodeDom" Version="10.0.2" />
+    <PackageReference Include="System.CodeDom" Version="10.0.3" />
     <PackageReference Include="MinVer" Version="7.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.102" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.103" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>

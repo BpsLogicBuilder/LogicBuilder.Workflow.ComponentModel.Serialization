@@ -5,7 +5,6 @@ using System.Linq;
 
 namespace LogicBuilder.Workflow.ComponentModel.Compiler
 {
-    [Serializable()]
     public sealed class ValidationErrorCollection : Collection<ValidationError>
     {
         public ValidationErrorCollection()
