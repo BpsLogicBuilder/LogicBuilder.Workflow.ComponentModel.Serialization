@@ -20,10 +20,10 @@ namespace LogicBuilder.Workflow.ComponentModel.Design
                 CloseOutput = true
             };
 
-            if (output is string)
-                return XmlWriter.Create(output as string, settings);
-            else if (output is TextWriter)
-                return XmlWriter.Create(output as TextWriter, settings);
+            if (output is string outputString)
+                return XmlWriter.Create(outputString, settings);
+            else if (output is TextWriter outputTextWriter)
+                return XmlWriter.Create(outputTextWriter, settings);
             else
             {
                 Debug.Assert(false, "Invalid argument type.  'output' must either be string or TextWriter.");

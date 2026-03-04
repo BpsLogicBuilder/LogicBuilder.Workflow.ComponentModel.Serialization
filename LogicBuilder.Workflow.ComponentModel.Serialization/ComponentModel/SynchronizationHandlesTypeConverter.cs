@@ -34,8 +34,8 @@ namespace LogicBuilder.Workflow.ComponentModel
 
         public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
         {
-            if (value is string)
-                return UnStringify(value as string);
+            if (value is string stringValue)
+                return UnStringify(stringValue);
 
             return base.ConvertFrom(context, culture, value);
         }

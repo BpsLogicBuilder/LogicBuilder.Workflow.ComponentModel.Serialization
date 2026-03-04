@@ -738,7 +738,6 @@ namespace LogicBuilder.Workflow.Tests.ComponentModel.Serialization
         public void OnGetKeyValue_ReturnsNull_WhenEntryNotInStack()
         {
             // Arrange
-            Trace.Listeners.Clear();
             var dictionary = new Dictionary<string, ExtendedPropertyInfo>();
             var extendee = "testValue";
 

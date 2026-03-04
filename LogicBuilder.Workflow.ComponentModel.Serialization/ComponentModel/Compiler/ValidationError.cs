@@ -5,13 +5,12 @@ using System.Globalization;
 namespace LogicBuilder.Workflow.ComponentModel.Compiler
 {
     [Serializable()]
-    public sealed class ValidationError
+    public sealed class ValidationError(string errorText, int errorNumber, bool isWarning, string propertyName)
     {
-        private readonly string errorText = string.Empty;
-        private readonly int errorNumber = 0;
+        private readonly string errorText = errorText;
+        private readonly int errorNumber = errorNumber;
         private Hashtable userData = null;
-        private readonly bool isWarning = false;
-        string propertyName = null;
+        private readonly bool isWarning = isWarning;
 
         public ValidationError(string errorText, int errorNumber)
             : this(errorText, errorNumber, false, null)
@@ -23,24 +22,8 @@ namespace LogicBuilder.Workflow.ComponentModel.Compiler
         {
         }
 
-        public ValidationError(string errorText, int errorNumber, bool isWarning, string propertyName)
-        {
-            this.errorText = errorText;
-            this.errorNumber = errorNumber;
-            this.isWarning = isWarning;
-            this.propertyName = propertyName;
-        }
-        public string PropertyName
-        {
-            get
-            {
-                return this.propertyName;
-            }
-            set
-            {
-                this.propertyName = value;
-            }
-        }
+        public string PropertyName { get; set; } = propertyName;
+
         public string ErrorText
         {
             get
@@ -66,15 +49,14 @@ namespace LogicBuilder.Workflow.ComponentModel.Compiler
         {
             get
             {
-                if (this.userData == null)
-                    this.userData = new Hashtable();
+                this.userData ??= [];
                 return this.userData;
             }
         }
 
         public static ValidationError GetNotSetValidationError(string propertyName)
         {
-            ValidationError error = new ValidationError(SR.GetString(SR.Error_PropertyNotSet, propertyName), ErrorNumbers.Error_PropertyNotSet)
+            ValidationError error = new(SR.GetString(SR.Error_PropertyNotSet, propertyName), ErrorNumbers.Error_PropertyNotSet)
             {
                 PropertyName = propertyName
             };

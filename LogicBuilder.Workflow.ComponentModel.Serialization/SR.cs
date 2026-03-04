@@ -1,9 +1,10 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 using System.Resources;
+
+namespace LogicBuilder.Workflow;
 
 [AttributeUsage(AttributeTargets.All)]
 internal sealed class SRDescriptionAttribute : DescriptionAttribute
@@ -15,9 +16,9 @@ internal sealed class SRDescriptionAttribute : DescriptionAttribute
 
     public SRDescriptionAttribute(string description, string resourceSet)
     {
-        ResourceManager rm = new ResourceManager(resourceSet, Assembly.GetExecutingAssembly());
+        ResourceManager rm = new(resourceSet, Assembly.GetExecutingAssembly());
         DescriptionValue = rm.GetString(description);
-        System.Diagnostics.Debug.Assert(DescriptionValue != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", new object[] { description }));
+        System.Diagnostics.Debug.Assert(DescriptionValue != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", description));
     }
 }
 
@@ -41,9 +42,9 @@ internal sealed class SRCategoryAttribute : CategoryAttribute
     {
         if (this.resourceSet.Length > 0)
         {
-            ResourceManager rm = new ResourceManager(resourceSet, Assembly.GetExecutingAssembly());
+            ResourceManager rm = new(resourceSet, Assembly.GetExecutingAssembly());
             String localizedString = rm.GetString(value);
-            System.Diagnostics.Debug.Assert(localizedString != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", new object[] { value }));
+            System.Diagnostics.Debug.Assert(localizedString != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", value));
             return localizedString;
         }
         else
@@ -63,9 +64,9 @@ internal sealed class SRDisplayNameAttribute : DisplayNameAttribute
 
     public SRDisplayNameAttribute(string name, string resourceSet)
     {
-        ResourceManager rm = new ResourceManager(resourceSet, Assembly.GetExecutingAssembly());
+        ResourceManager rm = new(resourceSet, Assembly.GetExecutingAssembly());
         DisplayNameValue = rm.GetString(name);
-        System.Diagnostics.Debug.Assert(DisplayNameValue != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", new object[] { name }));
+        System.Diagnostics.Debug.Assert(DisplayNameValue != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", name));
     }
 }
 
@@ -86,8 +87,7 @@ internal sealed class SR
 
     private static SR GetLoader()
     {
-        if (loader == null)
-            loader = new SR();
+        loader ??= new SR();
         return loader;
     }
 
@@ -107,7 +107,7 @@ internal sealed class SR
     {
         SR sys = GetLoader();
         string res = sys.resources.GetString(name, culture);
-        System.Diagnostics.Debug.Assert(res != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", new object[] { name }));
+        System.Diagnostics.Debug.Assert(res != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", name));
         return args != null && args.Length > 0
             ? string.Format(CultureInfo.CurrentCulture, res, args)
             : res;
@@ -122,7 +122,7 @@ internal sealed class SR
     {
         SR sys = GetLoader();
         string res = sys.resources.GetString(name, culture);
-        System.Diagnostics.Debug.Assert(res != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", new object[] { name }));
+        System.Diagnostics.Debug.Assert(res != null, string.Format(CultureInfo.CurrentCulture, "String resource {0} not found.", name));
         return res;
     }
 

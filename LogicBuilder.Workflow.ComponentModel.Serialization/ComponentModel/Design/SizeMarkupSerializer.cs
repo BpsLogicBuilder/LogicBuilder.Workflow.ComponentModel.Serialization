@@ -37,7 +37,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Design
         {
             object size = Size.Empty;
 
-            string sizeValue = value as string;
+            string sizeValue = value;
             if (!String.IsNullOrWhiteSpace(sizeValue))
             {
                 TypeConverter converter = TypeDescriptor.GetConverter(typeof(Size));

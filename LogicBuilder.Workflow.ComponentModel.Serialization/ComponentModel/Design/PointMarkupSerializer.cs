@@ -37,7 +37,7 @@ namespace LogicBuilder.Workflow.ComponentModel.Design
         {
             object point = Point.Empty;
 
-            string pointValue = value as string;
+            string pointValue = value;
             if (!String.IsNullOrWhiteSpace(pointValue))
             {
                 TypeConverter converter = TypeDescriptor.GetConverter(typeof(Point));

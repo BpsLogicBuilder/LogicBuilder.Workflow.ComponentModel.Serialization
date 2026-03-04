@@ -4,11 +4,6 @@ on:
   release:
     types: [published]
 
-permissions:
-    contents: read
-    packages: write
-    id-token: write
-
 env:
   DOTNET_VERSION: "10.0.x"
   NODE_VERSION: "20"
@@ -17,6 +12,9 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
 
     steps:
       - name: Checkout repository
@@ -53,6 +51,10 @@ jobs:
     name: Publish Package to GitHub Packages and NuGet.org
     runs-on: ubuntu-latest
     if: github.repository_owner == 'BpsLogicBuilder'
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     needs: test
 
     steps:

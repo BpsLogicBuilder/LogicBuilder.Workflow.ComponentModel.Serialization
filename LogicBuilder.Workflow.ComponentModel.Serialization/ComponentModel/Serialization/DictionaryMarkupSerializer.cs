@@ -16,7 +16,7 @@
         protected internal override IList GetChildren(WorkflowMarkupSerializationManager serializationManager, object obj)
         {
             IDictionary dictionary = obj as IDictionary ?? throw new InvalidOperationException(SR.GetString(SR.Error_DictionarySerializerNonDictionaryObject));
-            List<object> childEntries = new List<object>();
+            List<object> childEntries = [];
             foreach (DictionaryEntry dictionaryEntry in dictionary)
             {
                 childEntries.Add(dictionaryEntry);
@@ -29,7 +29,7 @@
 
         protected internal override PropertyInfo[] GetProperties(WorkflowMarkupSerializationManager serializationManager, object obj)
         {
-            return new PropertyInfo[] { };
+            return [];
         }
 
         protected internal override bool ShouldSerializeValue(WorkflowMarkupSerializationManager serializationManager, object value)
@@ -37,7 +37,7 @@
             if (value == null)
                 return false;
 
-            if (!(value is IDictionary))
+            if (value is not IDictionary)
                 throw new InvalidOperationException(SR.GetString(SR.Error_DictionarySerializerNonDictionaryObject));
 
             return (((IDictionary)value).Count > 0);
@@ -115,33 +115,32 @@
 
         internal override ExtendedPropertyInfo[] GetExtendedProperties(WorkflowMarkupSerializationManager manager, object extendee)
         {
-            List<ExtendedPropertyInfo> extendedProperties = new List<ExtendedPropertyInfo>();
+            List<ExtendedPropertyInfo> extendedProperties = [];
             DictionaryEntry? entry = null;
             if (manager.WorkflowMarkupStack[typeof(DictionaryEntry)] != null)
                 entry = (DictionaryEntry)manager.WorkflowMarkupStack[typeof(DictionaryEntry)];
             if (this.deserializingDictionary || (entry.HasValue && entry.Value.Value == extendee))
             {
                 ExtendedPropertyInfo extendedProperty =
-                    new ExtendedPropertyInfo(typeof(DictionaryEntry).GetProperty("Key", BindingFlags.Public | BindingFlags.Instance),
+                    new(typeof(DictionaryEntry).GetProperty("Key", BindingFlags.Public | BindingFlags.Instance),
                     new GetValueHandler(OnGetKeyValue),
                     new SetValueHandler(OnSetKeyValue),
                     new GetQualifiedNameHandler(OnGetXmlQualifiedName), manager);
 
                 extendedProperties.Add(extendedProperty);
             }
-            return extendedProperties.ToArray();
+            return [.. extendedProperties];
         }
 
-        private object OnGetKeyValue(ExtendedPropertyInfo extendedProperty, object extendee)
+        private static object OnGetKeyValue(ExtendedPropertyInfo extendedProperty, object extendee)
         {
             DictionaryEntry? entry = null;
             if (extendedProperty.SerializationManager.WorkflowMarkupStack[typeof(DictionaryEntry)] != null)
                 entry = (DictionaryEntry)extendedProperty.SerializationManager.WorkflowMarkupStack[typeof(DictionaryEntry)];
-            else
-                Debug.Assert(false, "Dictionary Entry not found in the WorkflowMarkupStack");
 
             if (entry.HasValue && entry.Value.Value == extendee)
                 return entry.Value.Key;
+
             return null;
         }
 
@@ -151,7 +150,7 @@
                 this.keylookupDictionary.Add(value, extendee);
         }
 
-        private XmlQualifiedName OnGetXmlQualifiedName(ExtendedPropertyInfo extendedProperty, WorkflowMarkupSerializationManager manager, out string prefix)
+        private static XmlQualifiedName OnGetXmlQualifiedName(ExtendedPropertyInfo extendedProperty, WorkflowMarkupSerializationManager manager, out string prefix)
         {
             prefix = StandardXomlKeys.Definitions_XmlNs_Prefix;
             return new XmlQualifiedName(extendedProperty.Name, StandardXomlKeys.Definitions_XmlNs);
