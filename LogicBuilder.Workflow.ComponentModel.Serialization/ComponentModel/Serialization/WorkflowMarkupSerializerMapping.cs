@@ -13,32 +13,21 @@
     #region Mapping
     internal sealed class WorkflowMarkupSerializerMapping
     {
-        private static readonly List<WorkflowMarkupSerializerMapping> wellKnownMappings;
+        private static readonly WorkflowMarkupSerializerMapping Serialization = new(StandardXomlKeys.Definitions_XmlNs_Prefix, StandardXomlKeys.Definitions_XmlNs, "LogicBuilder.Workflow.ComponentModel.Serialization", Assembly.GetExecutingAssembly().FullName);
+        private static readonly WorkflowMarkupSerializerMapping Rules = new(StandardXomlKeys.WorkflowPrefix, StandardXomlKeys.WorkflowXmlNs, "LogicBuilder.Workflow.Activities.Rules", AssemblyRef.ActivitiesAssemblyRef);
 
-        private static readonly WorkflowMarkupSerializerMapping Serialization;
-        private static readonly WorkflowMarkupSerializerMapping Rules;
+        private static readonly List<WorkflowMarkupSerializerMapping> wellKnownMappings =
+        [
+            Serialization,
+            Rules,
+            new WorkflowMarkupSerializerMapping(StandardXomlKeys.WorkflowPrefix, StandardXomlKeys.WorkflowXmlNs, "LogicBuilder.Workflow.Activities.Rules.Design", AssemblyRef.DialogAssemblyRef)
+        ];
 
         private readonly string xmlns = String.Empty;
         private readonly string clrns = String.Empty;
         private readonly string targetAssemblyName = String.Empty;
         private readonly string prefix = String.Empty;
         private readonly string unifiedAssemblyName = String.Empty;
-
-        static WorkflowMarkupSerializerMapping()
-        {
-            //I am hard coding the well known mappings here instead of going through the assemblies as we want the mappings to be in
-            //a specific order for performance optimization when searching for type
-            WorkflowMarkupSerializerMapping.wellKnownMappings = [];
-
-            WorkflowMarkupSerializerMapping.Serialization = new WorkflowMarkupSerializerMapping(StandardXomlKeys.Definitions_XmlNs_Prefix, StandardXomlKeys.Definitions_XmlNs, "LogicBuilder.Workflow.ComponentModel.Serialization", Assembly.GetExecutingAssembly().FullName);
-            WorkflowMarkupSerializerMapping.wellKnownMappings.Add(WorkflowMarkupSerializerMapping.Serialization);
-
-            WorkflowMarkupSerializerMapping.Rules = new WorkflowMarkupSerializerMapping(StandardXomlKeys.WorkflowPrefix, StandardXomlKeys.WorkflowXmlNs, "LogicBuilder.Workflow.Activities.Rules", AssemblyRef.ActivitiesAssemblyRef);
-            WorkflowMarkupSerializerMapping.wellKnownMappings.Add(WorkflowMarkupSerializerMapping.Rules);
-
-            //Possibly need this to work with a designer.
-            WorkflowMarkupSerializerMapping.wellKnownMappings.Add(new WorkflowMarkupSerializerMapping(StandardXomlKeys.WorkflowPrefix, StandardXomlKeys.WorkflowXmlNs, "LogicBuilder.Workflow.Activities.Rules.Design", AssemblyRef.DialogAssemblyRef));
-        }
 
         public WorkflowMarkupSerializerMapping(string prefix, string xmlNamespace, string clrNamespace, string assemblyName)
         {
@@ -134,15 +123,12 @@
                 knownMappings.Add(WorkflowMarkupSerializerMapping.Serialization);
             }
 
-            if (resolvedType == null)
+            foreach (WorkflowMarkupSerializerMapping mapping in knownMappings)
             {
-                foreach (WorkflowMarkupSerializerMapping mapping in knownMappings)
-                {
-                    string fullyQualifiedTypeName = mapping.ClrNamespace + "." + typeName + ", " + mapping.AssemblyName;
-                    resolvedType = manager.GetType(fullyQualifiedTypeName);
-                    if (resolvedType != null)
-                        break;
-                }
+                string fullyQualifiedTypeName = mapping.ClrNamespace + "." + typeName + ", " + mapping.AssemblyName;
+                resolvedType = manager.GetType(fullyQualifiedTypeName);
+                if (resolvedType != null)
+                    break;
             }
 
             return resolvedType;
@@ -153,62 +139,16 @@
             matchingMappings = [];
             collectedMappings = [];
 
-            if (serializationManager.WorkflowMarkupStack[typeof(XmlReader)] is XmlReader reader)
+            if (serializationManager.WorkflowMarkupStack[typeof(XmlReader)] is not XmlReader reader)
+                return;
+
+            if (xmlNamespace.StartsWith(StandardXomlKeys.CLRNamespaceQualifier, StringComparison.OrdinalIgnoreCase))
             {
-                if (xmlNamespace.StartsWith(StandardXomlKeys.CLRNamespaceQualifier, StringComparison.OrdinalIgnoreCase))
-                {
-                    //Format for the xmlnamespace: clr-namespace:[Namespace][;Assembly=[AssemblyName]]
-                    bool invalidXmlnsFormat = false;
-                    string clrNamespace = xmlNamespace.Substring(StandardXomlKeys.CLRNamespaceQualifier.Length).Trim();
-                    string assemblyName = String.Empty;
-                    int index = clrNamespace.IndexOf(';');
-                    if (index != -1)
-                    {
-                        assemblyName = (index + 1 < clrNamespace.Length) ? clrNamespace.Substring(index + 1).Trim() : String.Empty;
-                        clrNamespace = clrNamespace.Substring(0, index).Trim();
-
-                        if (!assemblyName.StartsWith(StandardXomlKeys.AssemblyNameQualifier, StringComparison.OrdinalIgnoreCase))
-                            invalidXmlnsFormat = true;
-
-                        assemblyName = assemblyName.Substring(StandardXomlKeys.AssemblyNameQualifier.Length);
-                    }
-
-                    if (!invalidXmlnsFormat)
-                    {
-                        if (clrNamespace.Equals(StandardXomlKeys.GlobalNamespace, StringComparison.OrdinalIgnoreCase))
-                            clrNamespace = String.Empty;
-                        matchingMappings.Add(new WorkflowMarkupSerializerMapping(reader.Prefix, xmlNamespace, clrNamespace, assemblyName));
-                    }
-                }
-                else
-                {
-                    List<Assembly> referencedAssemblies = [];
-                    if (serializationManager.LocalAssembly != null)
-                        referencedAssemblies.Add(serializationManager.LocalAssembly);
-
-                    foreach (Assembly assembly in referencedAssemblies)
-                    {
-                        object[] xmlnsDefinitions = assembly.GetCustomAttributes(typeof(XmlnsDefinitionAttribute), true);
-                        if (xmlnsDefinitions != null)
-                        {
-                            foreach (XmlnsDefinitionAttribute xmlnsDefinition in xmlnsDefinitions.OfType<XmlnsDefinitionAttribute>())
-                            {
-                                string assemblyName = String.Empty;
-                                if (serializationManager.LocalAssembly != assembly)
-                                {
-                                    assemblyName = xmlnsDefinition.AssemblyName != null && xmlnsDefinition.AssemblyName.Trim().Length > 0
-                                        ? xmlnsDefinition.AssemblyName
-                                        : assembly.FullName;
-                                }
-
-                                if (xmlnsDefinition.XmlNamespace.Equals(xmlNamespace, StringComparison.Ordinal))
-                                    matchingMappings.Add(new WorkflowMarkupSerializerMapping(reader.Prefix, xmlNamespace, xmlnsDefinition.ClrNamespace, assemblyName));
-                                else
-                                    collectedMappings.Add(new WorkflowMarkupSerializerMapping(reader.Prefix, xmlNamespace, xmlnsDefinition.ClrNamespace, assemblyName));
-                            }
-                        }
-                    }
-                }
+                AddMatchedMappingsFromXmlNamespaceString(xmlNamespace, matchingMappings, reader);
+            }
+            else
+            {
+                AddMappingsFromReferencedAssemblies(serializationManager, xmlNamespace, matchingMappings, collectedMappings, reader);
             }
         }
 
@@ -224,17 +164,9 @@
 
             assemblyName = GetAssemblyName(type);
 
-            if (type.Assembly.FullName.Equals(AssemblyRef.ActivitiesAssemblyRef, StringComparison.Ordinal))
-            {
-                xmlNamespace = StandardXomlKeys.WorkflowXmlNs;
-                prefix = StandardXomlKeys.WorkflowPrefix;
-            }
-            else if (type.Assembly.FullName.Equals(AssemblyRef.DialogAssemblyRef, StringComparison.Ordinal))
-            {
-                xmlNamespace = StandardXomlKeys.WorkflowXmlNs;
-                prefix = StandardXomlKeys.WorkflowPrefix;
-            }
-            else if (type.Assembly == Assembly.GetExecutingAssembly())
+            if (type.Assembly.FullName.Equals(AssemblyRef.ActivitiesAssemblyRef, StringComparison.Ordinal)
+                || type.Assembly.FullName.Equals(AssemblyRef.DialogAssemblyRef, StringComparison.Ordinal)
+                || type.Assembly == Assembly.GetExecutingAssembly())
             {
                 xmlNamespace = StandardXomlKeys.WorkflowXmlNs;
                 prefix = StandardXomlKeys.WorkflowPrefix;
@@ -242,43 +174,112 @@
 
             if (xmlNamespace.Length == 0)
             {
-                //First lookup the type's assembly for XmlNsDefinitionAttribute
-                object[] xmlnsDefinitions = type.Assembly.GetCustomAttributes(typeof(XmlnsDefinitionAttribute), true);
-                foreach (XmlnsDefinitionAttribute xmlnsDefinition in xmlnsDefinitions.OfType<XmlnsDefinitionAttribute>())
-                {
-                    xmlNamespace = xmlnsDefinition.XmlNamespace;
-                    assemblyName = xmlnsDefinition.AssemblyName;
-
-                    if (type.Assembly == manager.LocalAssembly)
-                        assemblyName = String.Empty;
-                    else if (String.IsNullOrEmpty(assemblyName))
-                        assemblyName = GetAssemblyName(type);
-
-                    if (String.IsNullOrEmpty(xmlNamespace))
-                        xmlNamespace = GetFormatedXmlNamespace(clrNamespace, assemblyName);
-                    prefix = GetPrefix(manager, type.Assembly, xmlNamespace);
-
-                    WorkflowMarkupSerializerMapping mapping = new(prefix, xmlNamespace, clrNamespace, assemblyName, type.Assembly.FullName);
-                    if (xmlnsDefinition.ClrNamespace.Equals(clrNamespace, StringComparison.Ordinal) && matchingMapping == null)
-                        matchingMapping = mapping;
-                    else
-                        collectedMappings.Add(mapping);
-                }
+                UpdateMappingsFromXmlnsDefinitionAttribute(manager, type, ref matchingMapping, collectedMappings, ref xmlNamespace, ref assemblyName, ref prefix);
             }
 
-            if (matchingMapping == null)
+            if (matchingMapping != null)
+                return;
+
+            if (type.Assembly == manager.LocalAssembly)
+                assemblyName = String.Empty;
+            else if (String.IsNullOrEmpty(assemblyName))
+                assemblyName = GetAssemblyName(type);
+
+            xmlNamespace = GetFormatedXmlNamespace(clrNamespace, assemblyName);
+
+            if (String.IsNullOrEmpty(prefix))
+                prefix = GetPrefix(manager, type.Assembly, xmlNamespace);
+
+            matchingMapping = new WorkflowMarkupSerializerMapping(prefix, xmlNamespace, clrNamespace, assemblyName, type.Assembly.FullName);
+        }
+
+
+
+        private static void AddMatchedMappingsFromXmlNamespaceString(string xmlNamespace, IList<WorkflowMarkupSerializerMapping> matchingMappings, XmlReader reader)
+        {
+            //Format for the xmlnamespace: clr-namespace:[Namespace][;Assembly=[AssemblyName]]
+            bool invalidXmlnsFormat = false;
+            string clrNamespace = xmlNamespace.Substring(StandardXomlKeys.CLRNamespaceQualifier.Length).Trim();
+            string assemblyName = String.Empty;
+            int index = clrNamespace.IndexOf(';');
+            if (index != -1)
             {
+                assemblyName = (index + 1 < clrNamespace.Length) ? clrNamespace.Substring(index + 1).Trim() : String.Empty;
+                clrNamespace = clrNamespace.Substring(0, index).Trim();
+
+                if (!assemblyName.StartsWith(StandardXomlKeys.AssemblyNameQualifier, StringComparison.OrdinalIgnoreCase))
+                    invalidXmlnsFormat = true;
+
+                assemblyName = assemblyName.Substring(StandardXomlKeys.AssemblyNameQualifier.Length);
+            }
+
+            if (!invalidXmlnsFormat)
+            {
+                if (clrNamespace.Equals(StandardXomlKeys.GlobalNamespace, StringComparison.OrdinalIgnoreCase))
+                    clrNamespace = String.Empty;
+                matchingMappings.Add(new WorkflowMarkupSerializerMapping(reader.Prefix, xmlNamespace, clrNamespace, assemblyName));
+            }
+        }
+
+        private static void AddMappingsFromReferencedAssemblies(WorkflowMarkupSerializationManager serializationManager, string xmlNamespace, IList<WorkflowMarkupSerializerMapping> matchingMappings, IList<WorkflowMarkupSerializerMapping> collectedMappings, XmlReader reader)
+        {
+            List<Assembly> referencedAssemblies = [];
+            if (serializationManager.LocalAssembly != null)
+                referencedAssemblies.Add(serializationManager.LocalAssembly);
+
+            foreach (Assembly assembly in referencedAssemblies)
+            {
+                AddMappingFromReferencedAssembly(serializationManager, xmlNamespace, matchingMappings, collectedMappings, reader, assembly);
+            }
+        }
+
+        private static void AddMappingFromReferencedAssembly(WorkflowMarkupSerializationManager serializationManager, string xmlNamespace, IList<WorkflowMarkupSerializerMapping> matchingMappings, IList<WorkflowMarkupSerializerMapping> collectedMappings, XmlReader reader, Assembly assembly)
+        {
+            object[] xmlnsDefinitions = assembly.GetCustomAttributes(typeof(XmlnsDefinitionAttribute), true);
+            if (xmlnsDefinitions != null)
+            {
+                foreach (XmlnsDefinitionAttribute xmlnsDefinition in xmlnsDefinitions.OfType<XmlnsDefinitionAttribute>())
+                {
+                    string assemblyName = String.Empty;
+                    if (serializationManager.LocalAssembly != assembly)
+                    {
+                        assemblyName = xmlnsDefinition.AssemblyName != null && xmlnsDefinition.AssemblyName.Trim().Length > 0
+                            ? xmlnsDefinition.AssemblyName
+                            : assembly.FullName;
+                    }
+
+                    if (xmlnsDefinition.XmlNamespace.Equals(xmlNamespace, StringComparison.Ordinal))
+                        matchingMappings.Add(new WorkflowMarkupSerializerMapping(reader.Prefix, xmlNamespace, xmlnsDefinition.ClrNamespace, assemblyName));
+                    else
+                        collectedMappings.Add(new WorkflowMarkupSerializerMapping(reader.Prefix, xmlNamespace, xmlnsDefinition.ClrNamespace, assemblyName));
+                }
+            }
+        }
+
+        private static void UpdateMappingsFromXmlnsDefinitionAttribute(WorkflowMarkupSerializationManager manager, Type type, ref WorkflowMarkupSerializerMapping matchingMapping, IList<WorkflowMarkupSerializerMapping> collectedMappings, ref string xmlNamespace, ref string assemblyName, ref string prefix)
+        {
+            //First lookup the type's assembly for XmlNsDefinitionAttribute
+            string clrNamespace = type.Namespace ?? string.Empty;
+            object[] xmlnsDefinitions = type.Assembly.GetCustomAttributes(typeof(XmlnsDefinitionAttribute), true);
+            foreach (XmlnsDefinitionAttribute xmlnsDefinition in xmlnsDefinitions.OfType<XmlnsDefinitionAttribute>())
+            {
+                xmlNamespace = xmlnsDefinition.XmlNamespace;
+                assemblyName = xmlnsDefinition.AssemblyName;
+
                 if (type.Assembly == manager.LocalAssembly)
                     assemblyName = String.Empty;
                 else if (String.IsNullOrEmpty(assemblyName))
                     assemblyName = GetAssemblyName(type);
 
-                xmlNamespace = GetFormatedXmlNamespace(clrNamespace, assemblyName);
+                if (String.IsNullOrEmpty(xmlNamespace))
+                    xmlNamespace = GetFormatedXmlNamespace(clrNamespace, assemblyName);
+                prefix = GetPrefix(manager, type.Assembly, xmlNamespace);
 
-                if (String.IsNullOrEmpty(prefix))
-                    prefix = GetPrefix(manager, type.Assembly, xmlNamespace);
-
-                matchingMapping = new WorkflowMarkupSerializerMapping(prefix, xmlNamespace, clrNamespace, assemblyName, type.Assembly.FullName);
+                WorkflowMarkupSerializerMapping mapping = new(prefix, xmlNamespace, clrNamespace, assemblyName, type.Assembly.FullName);
+                if (xmlnsDefinition.ClrNamespace.Equals(clrNamespace, StringComparison.Ordinal) && matchingMapping == null)
+                    matchingMapping = mapping;
+                else
+                    collectedMappings.Add(mapping);
             }
         }
 
