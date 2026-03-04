@@ -13,7 +13,7 @@ jobs:
     name: Check Commit Message  
     runs-on: ubuntu-latest
     steps:
-      - uses: gsactions/commit-message-checker@v2
+      - uses: gsactions/commit-message-checker@16fa2d5de096ae0d35626443bcd24f1e756cafee
         with:
           pattern: 'AB#\d+'
           error: 'Commit messages must contain a valid Azure DevOps work item ID (e.g., AB#123).'
